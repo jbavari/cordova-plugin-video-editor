@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
+#import <AssetsLibrary/ALAssetsLibrary.h>
 
 #import <Cordova/CDV.h>
 
@@ -15,5 +16,5 @@
 }
 
 - (void)transcodeVideo:(CDVInvokedUrlCommand*)command;
-
+- (void)writeVideoToPhotoLibrary:(NSURL *)nsurlToSave;
 @end

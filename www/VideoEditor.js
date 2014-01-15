@@ -1,19 +1,19 @@
 var cordova = require('cordova'),
     exec = require('cordova/exec');
 
-var VideoEditor = function() {
+var VideoEditorPlugin = function() {
         this.options = {};
 };
 
-VideoEditor.prototype = {
+VideoEditorPlugin.prototype = {
     /*
         Add your plugin methods here
     */
-    transcodeVideo: function transcodeVideo( fileUri, quality, success, error ) {
-        cordova.exec( success, error, "VideoEditor", "transcodeVideo", [fileUri, quality] );
+    transcodeVideo: function transcodeVideo( fileUri, outputFileUri, quality, success, error ) {
+        cordova.exec( success, error, "VideoEditorPlugin", "transcodeVideo", [fileUri, outputFileUri, quality] );
     }
 };
 
-var VideoEditorInstance = new VideoEditor();
+var VideoEditorPluginInstance = new VideoEditorPlugin();
 
 module.exports = VideoEditorInstance;
