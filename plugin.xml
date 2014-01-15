@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="org.apache.cordova.videoediting" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+	<name>VideoEditor</name>
+	<description>A plugin to assist in video editing tasks</description>
+    <keywords>cordova,video,editing,transcoding,encoding</keywords>
+    <repo>https://github.com/jbavari/cordova-plugin-video-editor.git</repo>
+    <license>Apache 2.0</license>
+
+
+	<js-module name="VideoEditor" src="www/VideoEditor.js">
+		<clobbers target="cordova.VideoEditor" />
+	</js-module>
+
+	<!-- ios -->
+    <platform name="ios">
+        <config-file target="config.xml" parent="/*">
+            <feature name="Device">
+                <param name="ios-package" value="VideoEditorPlugin"/>
+            </feature>
+        </config-file>
+
+        <header-file src="src/ios/VideoEditorPlugin.h" />
+        <source-file src="src/ios/VideoEditorPlugin.m" />
+ 	    <framework src="AssetsLibrary.framework" />
+ 	    <framework src="AVFoundation.framework" />
+    </platform>
+</plugin>
