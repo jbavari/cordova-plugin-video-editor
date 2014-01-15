@@ -4,7 +4,8 @@
 //  Created by Josh Bavari on 01-14-2014
 //
 
-#import "VideoEditor.h"
+#import <Cordova/CDV.h>
+#import "VideoEditorPlugin.h"
 
 @interface VideoEditorPlugin ()
 
@@ -37,7 +38,7 @@
 	NSArray *compatiblePresets = [AVAssetExportSession exportPresetsCompatibleWithAsset:videoAsset];
 	if ([compatiblePresets containsObject:AVAssetExportPresetLowQuality]) {
 		AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]
-			initWithAsset:anAsset presetName:AVAssetExportPresetLowQuality];
+			initWithAsset:videoAsset presetName:AVAssetExportPresetLowQuality];
 		exportSession.outputURL = assetOutputURL;
 		exportSession.outputFileType = AVFileTypeQuickTimeMovie;
 	 
@@ -55,12 +56,13 @@
 					NSLog(@"Export canceled");
 					break;
 				default:
-					CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-				    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 					break;
 			}
 		}];
 	}
+
+	CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
 @end
