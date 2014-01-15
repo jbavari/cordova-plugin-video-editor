@@ -8,7 +8,7 @@ After looking at an article on [How Vine Satisfied Its Need for Speed](http://ww
 
 This plugin will address those concerns, hopefully.
 
-++ On iOS
+## On iOS
 
 [iOS Developer AVFoundation Documentation](https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/AVFoundationPG/Articles/01_UsingAssets.html#//apple_ref/doc/uid/TP40010188-CH7-SW8)
 
@@ -18,7 +18,7 @@ This plugin will address those concerns, hopefully.
 
 
 
-++ On Android
+## On Android
 
 [Android Documentation](http://developer.android.com/guide/appendix/media-formats.html#recommendations)
 
