@@ -11,6 +11,10 @@
 		<clobbers target="cordova.VideoEditorPlugin" />
 	</js-module>
 
+    <js-module name="VideoEditorConstants" src="www/VideoEditorConstants.js">
+        <clobbers target="cordova.VideoEditorConstants" />
+    </js-module>
+
 	<!-- ios -->
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
