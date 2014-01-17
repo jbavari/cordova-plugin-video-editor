@@ -6,14 +6,19 @@ var VideoEditorPlugin = function() {
 };
 
 VideoEditorPlugin.prototype = {
-    /*
-        Add your plugin methods here
-    */
-    transcodeVideo: function transcodeVideo( fileUri, outputFileUri, quality, success, error ) {
-        cordova.exec( success, error, "VideoEditorPlugin", "transcodeVideo", [fileUri, outputFileUri, quality] );
+    transcodeVideo: function transcodeVideo( fileUri, outputFileUri, quality, outputFileType, optimizeForNetworkUse, success, error ) {
+        cordova.exec( success, error, "VideoEditorPlugin", "transcodeVideo", 
+        	[fileUri, outputFileUri, quality, outputFileType, optimizeForNetworkUse] );
     }
 };
 
 var VideoEditorPluginInstance = new VideoEditorPlugin();
 
-module.exports = VideoEditorInstance;
+// module.exports = VideoEditorInstance;
+
+
+if (typeof exports !== 'undefined') {
+  if (typeof module !== 'undefined' && module.exports) {
+    exports = module.exports = VideoEditorInstance;
+  }
+}

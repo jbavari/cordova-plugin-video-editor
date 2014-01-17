@@ -22,7 +22,9 @@
  * INDEX   ARGUMENT
  *  0       video input url
  *  1       video output url
- *  3       quality
+ *  2       quality
+ *  3       output file type
+ *  4       optimize for network use
  */
 - (void) transcodeVideo:(CDVInvokedUrlCommand*)command
 {
@@ -34,9 +36,47 @@
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *outputURL = paths[0];
     
-
-	NSURL *assetURL = [NSURL URLWithString:[arguments objectAtIndex:0]];
+    NSURL *assetURL = [NSURL URLWithString:[arguments objectAtIndex:0]];
 	NSURL *assetOutputURL = [NSURL URLWithString:[arguments objectAtIndex:1]];
+    
+    CDVQualityType qualityType = ([arguments objectAtIndex:2]) ? [[arguments objectAtIndex:2] intValue] : LowQuality;
+    
+    NSString *presetName = Nil;
+    
+    switch(qualityType) {
+        case HighQuality:
+            presetName = AVAssetExportPresetHighestQuality;
+            break;
+        case MediumQuality:
+        default:
+            presetName = AVAssetExportPresetMediumQuality;
+            break;
+        case LowQuality:
+            presetName = AVAssetExportPresetLowQuality;
+    }
+
+    
+    CDVOutputFileType outputFileType = ([arguments objectAtIndex:3]) ? [[arguments objectAtIndex:3] intValue] : MPEG4;
+    
+    BOOL optimizeForNetworkUse = ([arguments objectAtIndex:4]) ? YES : NO;
+    
+    NSString *stringOutputFileType = Nil;
+    
+    switch (outputFileType) {
+        case QUICK_TIME:
+            stringOutputFileType = AVFileTypeQuickTimeMovie;
+            break;
+        case M4A:
+            stringOutputFileType = AVFileTypeAppleM4A;
+            break;
+        case M4V:
+            stringOutputFileType = AVFileTypeAppleM4V;
+            break;
+        case MPEG4:
+        default:
+            stringOutputFileType = AVFileTypeMPEG4;
+            break;
+    }
     
     NSFileManager *manager = [NSFileManager defaultManager];
     [manager createDirectoryAtPath:outputURL withIntermediateDirectories:YES attributes:nil error:nil];
@@ -51,12 +91,12 @@
 	NSArray *compatiblePresets = [AVAssetExportSession exportPresetsCompatibleWithAsset:videoAsset];
 	if ([compatiblePresets containsObject:AVAssetExportPresetLowQuality]) {
 		AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]
-			initWithAsset:videoAsset presetName:AVAssetExportPresetLowQuality];
+			initWithAsset:videoAsset presetName:presetName];
 		exportSession.outputURL = assetOutputURL;
 //		exportSession.outputFileType = AVFileTypeQuickTimeMovie;
-        exportSession.outputFileType = AVFileTypeMPEG4;
-        exportSession.shouldOptimizeForNetworkUse = YES;
-	 
+        exportSession.outputFileType = stringOutputFileType;
+        exportSession.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
+        
 		CMTime start = CMTimeMakeWithSeconds(1.0, 600);
 		CMTime duration = CMTimeMakeWithSeconds(3.0, 600);
 		CMTimeRange range = CMTimeRangeMake(start, duration);
