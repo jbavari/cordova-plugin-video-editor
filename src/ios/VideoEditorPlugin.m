@@ -102,11 +102,11 @@
                 case AVAssetExportSessionStatusCompleted:
                     [self writeVideoToPhotoLibrary:assetOutputURL];
                     NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[assetOutputURL absoluteString] ] callbackId:command.callbackId];
                     break;
 				case AVAssetExportSessionStatusFailed:
 					NSLog(@"Export failed: %@", [[exportSession error] localizedDescription]);
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR] callbackId:command.callbackId];
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
 					break;
 				case AVAssetExportSessionStatusCancelled:
 					NSLog(@"Export canceled");
