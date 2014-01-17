@@ -101,15 +101,19 @@
 		CMTime duration = CMTimeMakeWithSeconds(3.0, 600);
 		CMTimeRange range = CMTimeRangeMake(start, duration);
 //		exportSession.timeRange = range;
+        
+        CDVPluginResult *pluginResult = NULL;
 
 		[exportSession exportAsynchronouslyWithCompletionHandler:^{
 			switch ([exportSession status]) {
                 case AVAssetExportSessionStatusCompleted:
                     [self writeVideoToPhotoLibrary:assetOutputURL];
                     NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
                     break;
 				case AVAssetExportSessionStatusFailed:
 					NSLog(@"Export failed: %@", [[exportSession error] localizedDescription]);
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR] callbackId:command.callbackId];
 					break;
 				case AVAssetExportSessionStatusCancelled:
 					NSLog(@"Export canceled");
@@ -119,51 +123,8 @@
 			}
 		}];
 	}
-    
-    //OTHER CODE
-    //[[NSFileManager defaultManager] removeItemAtURL:outputURL error:nil];
-//    AVURLAsset *asset = [AVURLAsset URLAssetWithURL:videoToTrimURL options:nil];
-//    AVAssetExportSession *exportSession = [[AVAssetExportSession alloc] initWithAsset:asset presetName:AVAssetExportPresetHighestQuality];
-//    
-//    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-//    NSString *outputURL = paths[0];
-//    NSFileManager *manager = [NSFileManager defaultManager];
-//    [manager createDirectoryAtPath:outputURL withIntermediateDirectories:YES attributes:nil error:nil];
-//    outputURL = [outputURL stringByAppendingPathComponent:@"output.mp4"];
-//    // Remove Existing File
-//    [manager removeItemAtPath:outputURL error:nil];
-//    
-//    
-//    exportSession.outputURL = [NSURL fileURLWithPath:outputURL];
-//    exportSession.shouldOptimizeForNetworkUse = YES;
-//    exportSession.outputFileType = AVFileTypeQuickTimeMovie;
-//    CMTime start = CMTimeMakeWithSeconds(1.0, 600);
-//    CMTime duration = CMTimeMakeWithSeconds(3.0, 600);
-//    CMTimeRange range = CMTimeRangeMake(start, duration);
-//    exportSession.timeRange = range;
-//    [exportSession exportAsynchronouslyWithCompletionHandler:^(void)
-//     {
-//         switch (exportSession.status) {
-//             case AVAssetExportSessionStatusCompleted:
-//                 [self writeVideoToPhotoLibrary:[NSURL fileURLWithPath:outputURL]];
-//                 NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
-//                 break;
-//             case AVAssetExportSessionStatusFailed:
-//                 NSLog(@"Failed:%@",exportSession.error);
-//                 break;
-//             case AVAssetExportSessionStatusCancelled:
-//                 NSLog(@"Canceled:%@",exportSession.error);
-//                 break;
-//             default:
-//                 break;
-//         }
-//         
-//         //[exportSession release];
-    
-    //AFTER OTHER CODE
 
-	CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+
 }
 
 -(void)writeVideoToPhotoLibrary:(NSURL *)nsurlToSave{
