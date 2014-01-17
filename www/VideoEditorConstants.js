@@ -1,4 +1,8 @@
-// VideoEditorConstants.js
+//
+//  VideoEditorConstants.js
+//
+//  Created by Josh Bavari on 01-14-2014
+//
 
 var VideoEditorOptions = {
 	Quality: {
@@ -6,7 +10,7 @@ var VideoEditorOptions = {
 		MEDIUM_QUALITY: 1,
 		LOW_QUALITY: 2,
 	},
-	OptimizeForNetworkUse = {
+	OptimizeForNetworkUse: {
 		NO: 0,
 		YES: 1
 	},

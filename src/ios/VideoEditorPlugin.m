@@ -10,10 +10,6 @@
 
 @interface VideoEditorPlugin ()
 
-// @property (strong, nonatomic) NSString *userid;
-// @property (strong, nonatomic) NSString* loginCallbackId;
-// @property (strong, nonatomic) NSString* dialogCallbackId;
-
 @end
 
 @implementation VideoEditorPlugin
@@ -30,8 +26,6 @@
 {
 	NSString* callbackId = command.callbackId;
     NSArray* arguments = command.arguments;
-
-    //"file:///private/var/mobile/Applications/8AF200CC-F3ED-439C-ACF7-FB6B3C012019/tmp/trim.BCCB55E5-8488-41B6-9867-3C50670818BB.MOV"
 
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString *outputURL = paths[0];
@@ -93,7 +87,6 @@
 		AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]
 			initWithAsset:videoAsset presetName:presetName];
 		exportSession.outputURL = assetOutputURL;
-//		exportSession.outputFileType = AVFileTypeQuickTimeMovie;
         exportSession.outputFileType = stringOutputFileType;
         exportSession.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
         
@@ -123,7 +116,6 @@
 			}
 		}];
 	}
-
 
 }
 

@@ -1,3 +1,9 @@
+//
+//  VideoEditor.js
+//
+//  Created by Josh Bavari on 01-14-2014
+//
+
 var cordova = require('cordova'),
     exec = require('cordova/exec');
 

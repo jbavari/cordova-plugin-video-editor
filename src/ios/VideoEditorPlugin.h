@@ -1,9 +1,7 @@
 //
-//  FacebookConnectPlugin.h
-//  GapFacebookConnect
+//	VideoEditorPlugin.h
 //
-//  Created by Jesse MacFadyen on 11-04-22.
-//  Copyright 2011 Nitobi. All rights reserved.
+//  Created by Josh Bavari on 01-14-2014
 //
 
 #import <Foundation/Foundation.h>
@@ -18,12 +16,6 @@ enum CDVQualityType {
 	LowQuality = 2,
 };
 typedef NSUInteger CDVQualityType;
-
-//enum CDVOptimizeForNetworkUse {
-//	No = 0,
-//	Yes = 1
-//};
-//typedef NSUInteger CDVOptimizeForNetworkUse;
 
 enum CDVOutputFileType {
 	M4V = 0,
