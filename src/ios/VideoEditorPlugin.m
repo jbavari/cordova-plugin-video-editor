@@ -125,7 +125,7 @@
     if ([library videoAtPathIsCompatibleWithSavedPhotosAlbum:recordedVideoURL]) {
         [library writeVideoAtPathToSavedPhotosAlbum:recordedVideoURL completionBlock:^(NSURL *assetURL, NSError *error){} ];
     }
-    [library release];
+    //[library release];
 }
 
 @end
