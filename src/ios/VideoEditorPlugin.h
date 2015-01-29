@@ -2,6 +2,7 @@
 //	VideoEditorPlugin.h
 //
 //  Created by Josh Bavari on 01-14-2014
+//  Modified by Ross Martin on 01-29-2015
 //
 
 #import <Foundation/Foundation.h>
@@ -29,6 +30,5 @@ typedef NSUInteger CDVOutputFileType;
 }
 
 - (void)transcodeVideo:(CDVInvokedUrlCommand*)command;
-- (void)writeVideoToPhotoLibrary:(NSURL *)nsurlToSave;
 
 @end
