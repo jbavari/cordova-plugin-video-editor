@@ -8,17 +8,17 @@
 
 
 	<js-module name="VideoEditorPlugin" src="www/VideoEditorPlugin.js">
-		<clobbers target="cordova.VideoEditorPlugin" />
+		<clobbers target="VideoEditorPlugin" />
 	</js-module>
 
     <js-module name="VideoEditorConstants" src="www/VideoEditorConstants.js">
-        <clobbers target="cordova.VideoEditorConstants" />
+        <clobbers target="VideoEditorConstants" />
     </js-module>
 
 	<!-- ios -->
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
-            <feature name="Device">
+            <feature name="VideoEditorPlugin">
                 <param name="ios-package" value="VideoEditorPlugin"/>
             </feature>
         </config-file>
