@@ -51,20 +51,25 @@
     BOOL optimizeForNetworkUse = ([arguments objectAtIndex:4]) ? YES : NO;
     
     NSString *stringOutputFileType = Nil;
+    NSString *outputExtension = Nil;
     
     switch (outputFileType) {
         case QUICK_TIME:
             stringOutputFileType = AVFileTypeQuickTimeMovie;
+            outputExtension = @".mov";
             break;
         case M4A:
             stringOutputFileType = AVFileTypeAppleM4A;
+            outputExtension = @".m4a";
             break;
         case M4V:
             stringOutputFileType = AVFileTypeAppleM4V;
+            outputExtension = @".m4v";
             break;
         case MPEG4:
         default:
             stringOutputFileType = AVFileTypeMPEG4;
+            outputExtension = @".mp4";
             break;
     }
     
@@ -91,7 +96,7 @@
         {
             AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]initWithAsset:avAsset presetName: presetName];
             NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-            NSString *videoPath = [NSString stringWithFormat:@"%@/%@%@", [paths objectAtIndex:0], videoFileName, @".mp4"];
+            NSString *videoPath = [NSString stringWithFormat:@"%@/%@%@", [paths objectAtIndex:0], videoFileName, outputExtension];
             
             exportSession.outputURL = [NSURL fileURLWithPath:videoPath];
             exportSession.outputFileType = stringOutputFileType;
