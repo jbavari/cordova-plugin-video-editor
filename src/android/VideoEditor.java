@@ -1,16 +1,20 @@
 package org.apache.cordova.videoeditor;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 
 import com.netcompss.loader.LoadJNI;
 
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Environment;
 import android.util.Log;
 
@@ -53,23 +57,34 @@ public class VideoEditor extends CordovaPlugin {
          *  4       optimize for network use
          */
         
-        final String videoSrcPath = new File(args.getString(0).replace("file:", "")).getAbsolutePath();
-        final String outputFileName = args.getString(1);
-        final int outputType = args.getInt(2);
+        final File inFile = new File(args.getString(0).replace("file:", ""));
+        final Context appContext = cordova.getActivity().getApplicationContext();
+        final PackageManager pm = appContext.getPackageManager();
         
-        Log.v(TAG, "videoSrcPath: " + videoSrcPath);
+        ApplicationInfo ai;
+        try {
+            ai = pm.getApplicationInfo( cordova.getActivity().getPackageName(), 0);
+        } catch (final NameNotFoundException e) {
+            ai = null;
+        }
+        final String applicationName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
         
-        File inFile = new File(videoSrcPath);
         if (!inFile.exists()) {
             Log.d(TAG, "input file does not exist");
             callback.error("input video does not exist.");
             return;
         }
-                
+        
+        final String videoSrcPath = inFile.getAbsolutePath();
+        final String outputFileName = args.getString(1);
+        final int outputType = args.getInt(2);
+        
+        Log.d(TAG, "videoSrcPath: " + videoSrcPath);
+                        
         String outputExtension = null;
         
         // WTF Java won't allow a switch on a string unless JRE 1.7+
-        if (outputType == QUICK_TIME){
+        if (outputType == QUICK_TIME) {
             outputExtension = ".mov";
         } else if (outputType == M4A) {
             outputExtension = ".m4a";
@@ -79,9 +94,22 @@ public class VideoEditor extends CordovaPlugin {
             outputExtension = ".mp4";
         }
         
+        File mediaStorageDir = new File(
+            Environment.getExternalStorageDirectory() + "/Movies",
+            applicationName
+        );
+        
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdir()) {
+                callback.error("Can't access or make Movies directory");
+                return;
+            }
+        }
+        
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        
         final String outputFilePath =  new File(
-            Environment.getExternalStorageDirectory().getPath(), 
-            outputFileName + outputExtension
+            mediaStorageDir.getPath() + File.separator + "VID_" + timeStamp + outputExtension
         ).getAbsolutePath();
         
         Log.v(TAG, "outputFilePath: " + outputFilePath);
@@ -91,8 +119,6 @@ public class VideoEditor extends CordovaPlugin {
                 
                 LoadJNI vk = new LoadJNI();
                  try {
-                    Context appContext = cordova.getActivity().getApplicationContext();
-                    
                     String workFolder = appContext.getFilesDir().getAbsolutePath();
                     //String[] complexCommand = {"ffmpeg","-i", videoSrcPath};
                     
@@ -110,7 +136,10 @@ public class VideoEditor extends CordovaPlugin {
                         "-r", // fps, TODO: control fps based on quality plugin argument
                         "24", 
                         "-vcodec", 
-                        "mpeg4", // TODO: try libx264 with -preset ultrafast flag
+                        //"mpeg4", // TODO: try libx264 with -preset ultrafast flag
+                        "libx264",
+                        "-preset",
+                        "ultrafast",
                         "-b",
                         "2097152", // TODO: allow tuning the video bitrate based on quality plugin argument
                         //"-ab", // can't find this in ffmpeg docs, not sure on this yet
@@ -135,6 +164,11 @@ public class VideoEditor extends CordovaPlugin {
                         Log.d(TAG, "outputFile doesn't exist!");
                         callback.error("an error ocurred during transcoding");
                         return;
+                    }
+                    
+                    Boolean deletedInFile = inFile.delete(); // remove the input file
+                    if (!deletedInFile) {
+                        Log.d(TAG, "unable to delete in file");
                     }
                     
                     callback.success(outputFilePath);
