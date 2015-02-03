@@ -39,11 +39,15 @@ public class VideoEditor extends CordovaPlugin {
 
     private CallbackContext callback;
     
+    private static final int HighQuality = 0;
+    private static final int MediumQuality = 1;
+    private static final int LowQuality = 2;
+    
     private static final int M4V = 0;
     private static final int MPEG4 = 1;
     private static final int M4A = 2;
     private static final int QUICK_TIME = 3;
-
+    
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         Log.d(TAG, "execute method starting");
@@ -86,21 +90,39 @@ public class VideoEditor extends CordovaPlugin {
             "outputFileName", 
             new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
+        final int videoQuality = options.optInt("quality", HighQuality);
         final int outputType = options.optInt("outputFileType", MPEG4);
         
         Log.d(TAG, "videoSrcPath: " + videoSrcPath);
                         
-        String outputExtension = null;
+        String outputExtension;
+        final String outputResolution; // arbitrary value used for ffmpeg, tailor to your needs
         
-        // WTF Java won't allow a switch on a string unless JRE 1.7+
-        if (outputType == QUICK_TIME) {
-            outputExtension = ".mov";
-        } else if (outputType == M4A) {
-            outputExtension = ".m4a";
-        } else if (outputType == M4V) {
-            outputExtension = ".m4v";
-        } else {
-            outputExtension = ".mp4";
+        switch(outputType) {
+            case QUICK_TIME:
+                outputExtension = ".mov";
+                break;
+            case M4A:
+                outputExtension = ".m4a";
+                break;
+            case M4V:
+                outputExtension = ".m4v";
+                break;
+            case MPEG4:
+            default:
+                outputExtension = ".mp4";
+                break;
+        }
+        
+        switch(videoQuality) {
+            case LowQuality:
+                outputResolution = "144x192";
+                break;
+            case MediumQuality:
+            case HighQuality:
+            default:
+                outputResolution = "360x480"; 
+                break;
         }
         
         final Context appContext = cordova.getActivity().getApplicationContext();
@@ -150,7 +172,7 @@ public class VideoEditor extends CordovaPlugin {
                     al.add("-strict");
                     al.add("experimental");
                     al.add("-s"); // frame size (resolution)
-                    al.add("720x480"); // TODO: provide res choices from quality plugin argument
+                    al.add(outputResolution);
                     al.add("-r"); // fps, TODO: control fps based on quality plugin argument
                     al.add("24"); 
                     al.add("-vcodec");
