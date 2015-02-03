@@ -53,7 +53,7 @@
     
     BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? YES : NO;
     
-    int videoDuration = [[options objectForKey:@"duration"] intValue];
+    float videoDuration = [[options objectForKey:@"duration"] floatValue];
     
     NSString *stringOutputFileType = Nil;
     NSString *outputExtension = Nil;
@@ -108,8 +108,9 @@
         
         if (videoDuration)
         {
-            CMTime startTime = CMTimeMake(0, 1);
-            CMTime stopTime = CMTimeMake(videoDuration, 1);
+            int32_t preferredTimeScale = 600;
+            CMTime startTime = CMTimeMakeWithSeconds(0, preferredTimeScale);
+            CMTime stopTime = CMTimeMakeWithSeconds(videoDuration, preferredTimeScale);
             CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
             exportSession.timeRange = exportTimeRange;
         }
