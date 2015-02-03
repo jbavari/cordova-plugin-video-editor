@@ -15,7 +15,7 @@ This plugin will address those concerns, hopefully.
 // parameters passed to transcodeVideo
 VideoEditorPlugin.transcodeVideo(
     success, // success cb
-    error // error cb
+    error, // error cb
     {
         fileUri: 'file-uri-here', // the path to the video on the device
         outputFileName: 'output-name', // the file name for the transcoded video
@@ -58,7 +58,7 @@ navigator.device.capture.captureVideo(
 
 function videoCaptureSuccess(mediaFiles) {
     var file = mediaFiles[0];
-    var videoFileName = 'video-name-here';
+    var videoFileName = 'video-name-here'; // I suggest a uuid
 
     VideoEditor.transcodeVideo(
         videoTranscodeSuccess,

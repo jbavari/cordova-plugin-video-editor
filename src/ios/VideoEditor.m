@@ -89,50 +89,45 @@
     NSData *videoData = [NSData dataWithContentsOfFile:assetPath];
     [videoData writeToFile:tempVideoPath atomically:NO];
 
-
-    if (UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(assetPath))
+    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:tempVideoPath] options:nil];
+    NSArray *compatiblePresets = [AVAssetExportSession exportPresetsCompatibleWithAsset:avAsset];
+    
+    if ([compatiblePresets containsObject:AVAssetExportPresetLowQuality])
     {
-        AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:tempVideoPath] options:nil];
-        NSArray *compatiblePresets = [AVAssetExportSession exportPresetsCompatibleWithAsset:avAsset];
+        AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]initWithAsset:avAsset presetName: presetName];
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+        NSString *videoPath = [NSString stringWithFormat:@"%@/%@%@", [paths objectAtIndex:0], videoFileName, outputExtension];
         
-        if ([compatiblePresets containsObject:AVAssetExportPresetLowQuality])
-        {
-            AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]initWithAsset:avAsset presetName: presetName];
-            NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-            NSString *videoPath = [NSString stringWithFormat:@"%@/%@%@", [paths objectAtIndex:0], videoFileName, outputExtension];
-            
-            exportSession.outputURL = [NSURL fileURLWithPath:videoPath];
-            exportSession.outputFileType = stringOutputFileType;
-            exportSession.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
-            
-            NSLog(@"videopath of your file = %@", videoPath);
-            
-            //CMTime start = CMTimeMakeWithSeconds(1.0, 600);
-            //CMTime duration = CMTimeMakeWithSeconds(3.0, 600);
-            //CMTimeRange range = CMTimeRangeMake(start, duration);
-            //exportSession.timeRange = range;
+        exportSession.outputURL = [NSURL fileURLWithPath:videoPath];
+        exportSession.outputFileType = stringOutputFileType;
+        exportSession.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
+        
+        NSLog(@"videopath of your file = %@", videoPath);
+        
+        //CMTime start = CMTimeMakeWithSeconds(1.0, 600);
+        //CMTime duration = CMTimeMakeWithSeconds(3.0, 600);
+        //CMTimeRange range = CMTimeRangeMake(start, duration);
+        //exportSession.timeRange = range;
 
-            [exportSession exportAsynchronouslyWithCompletionHandler:^{
-                switch ([exportSession status]) {
-                    case AVAssetExportSessionStatusCompleted:
-                        UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
-                        NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
-                        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoPath] callbackId:command.callbackId];
-                        break;
-                    case AVAssetExportSessionStatusFailed:
-                        NSLog(@"Export failed: %@", [[exportSession error] localizedDescription]);
-                        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
-                        break;
-                    case AVAssetExportSessionStatusCancelled:
-                        NSLog(@"Export canceled");
-                        break;
-                    default:
-                        NSLog(@"Export default in switch");
-                        break;
-                }
-            }];
-        }
-        
+        [exportSession exportAsynchronouslyWithCompletionHandler:^{
+            switch ([exportSession status]) {
+                case AVAssetExportSessionStatusCompleted:
+                    UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
+                    NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoPath] callbackId:command.callbackId];
+                    break;
+                case AVAssetExportSessionStatusFailed:
+                    NSLog(@"Export failed: %@", [[exportSession error] localizedDescription]);
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
+                    break;
+                case AVAssetExportSessionStatusCancelled:
+                    NSLog(@"Export canceled");
+                    break;
+                default:
+                    NSLog(@"Export default in switch");
+                    break;
+            }
+        }];
     }
 
 }
