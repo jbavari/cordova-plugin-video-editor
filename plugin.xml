@@ -15,6 +15,17 @@
         <clobbers target="VideoEditorConstants" />
     </js-module>
 
+    <!-- android -->
+    <platform name="android">
+        <config-file target="config.xml" parent="/*">
+            <feature name="VideoEditorPlugin">
+                <param name="android-package" value="org.apache.cordova.videoeditor.VideoEditor" />
+            </feature>
+        </config-file>
+        <!-- add plugin class -->
+        <source-file src="src/android/VideoEditor.java" target-dir="src/org/apache/cordova/videoeditor" />
+    </platform>
+
 	<!-- ios -->
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
