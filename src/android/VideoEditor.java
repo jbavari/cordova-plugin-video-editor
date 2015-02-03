@@ -1,8 +1,6 @@
 package org.apache.cordova.videoeditor;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
@@ -108,11 +106,9 @@ public class VideoEditor extends CordovaPlugin {
             }
         }
         
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        
         final String outputFilePath =  new File(
             mediaStorageDir.getPath(),
-            "VID_" + timeStamp + outputExtension
+            "VID_" + outputFileName + outputExtension
         ).getAbsolutePath();
         
         Log.v(TAG, "outputFilePath: " + outputFilePath);
@@ -174,9 +170,10 @@ public class VideoEditor extends CordovaPlugin {
                         Log.d(TAG, "unable to delete in file");
                     }
                     
-                    // remove the input file from the gallery
+                    // make the gallery display the new file and not the deleted one
                     Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                     scanIntent.setData(Uri.fromFile(inFile));
+                    scanIntent.setData(Uri.fromFile(outFile));
                     appContext.sendBroadcast(scanIntent);
                     
                     callback.success(outputFilePath);
