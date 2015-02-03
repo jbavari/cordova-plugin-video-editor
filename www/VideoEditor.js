@@ -6,13 +6,13 @@
 //
 
 var exec = require('cordova/exec'),
-	pluginName = 'VideoEditorPlugin';
+    pluginName = 'VideoEditorPlugin';
 
 function VideoEditor() {
 }
 
 VideoEditor.prototype.transcodeVideo = function(success, error, options) {
-	// options = fileUri, outputFileName, quality, outputFileType, optimizeForNetworkUse
+    // options = fileUri, outputFileName, quality, outputFileType, optimizeForNetworkUse
     exec(success, error, pluginName, 'transcodeVideo', [options]);
 };
 
