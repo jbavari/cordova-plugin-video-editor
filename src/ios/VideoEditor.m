@@ -6,7 +6,7 @@
 //
 
 #import <Cordova/CDV.h>
-#import "VideoEditorPlugin.h"
+#import "VideoEditor.h"
 
 
 @interface VideoEditorPlugin ()
@@ -16,21 +16,24 @@
 @implementation VideoEditorPlugin
 
 /*  transcodeVideo arguments:
- * INDEX   ARGUMENT
- *  0       video input url
- *  1       output file name
- *  2       quality
- *  3       output file type
- *  4       optimize for network use
+ fileUri: video input url
+ outputFileName: output file name
+ quality: transcode quality
+ outputFileType: output file type
+ optimizeForNetworkUse: optimize for network use
  */
 - (void) transcodeVideo:(CDVInvokedUrlCommand*)command
 {
-    NSArray* arguments = command.arguments;
+    NSDictionary* options = [command.arguments objectAtIndex:0];
     
-    NSString *assetPath = [arguments objectAtIndex:0];
-    NSString *videoFileName = [arguments objectAtIndex:1];
+    if ([options isKindOfClass:[NSNull class]]) {
+        options = [NSDictionary dictionary];
+    }
     
-    CDVQualityType qualityType = ([arguments objectAtIndex:2]) ? [[arguments objectAtIndex:2] intValue] : LowQuality;
+    NSString *assetPath = [options objectForKey:@"fileUri"];
+    NSString *videoFileName = [options objectForKey:@"outputFileName"];
+    
+    CDVQualityType qualityType = ([options objectForKey:@"quality"]) ? [[options objectForKey:@"quality"] intValue] : LowQuality;
     
     NSString *presetName = Nil;
     
@@ -46,9 +49,9 @@
             presetName = AVAssetExportPresetLowQuality;
     }
 
-    CDVOutputFileType outputFileType = ([arguments objectAtIndex:3]) ? [[arguments objectAtIndex:3] intValue] : MPEG4;
+    CDVOutputFileType outputFileType = ([options objectForKey:@"outputFileType"]) ? [[options objectForKey:@"outputFileType"] intValue] : MPEG4;
     
-    BOOL optimizeForNetworkUse = ([arguments objectAtIndex:4]) ? YES : NO;
+    BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? YES : NO;
     
     NSString *stringOutputFileType = Nil;
     NSString *outputExtension = Nil;

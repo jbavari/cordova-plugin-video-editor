@@ -12,8 +12,8 @@ function VideoEditor() {
 }
 
 VideoEditor.prototype.transcodeVideo = function(success, error, options) {
+	// options = fileUri, outputFileName, quality, outputFileType, optimizeForNetworkUse
     exec(success, error, pluginName, 'transcodeVideo', [options]);
-    // options = fileUri, outputFileName, quality, outputFileType, optimizeForNetworkUse
 };
 
 module.exports = new VideoEditor();

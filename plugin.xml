@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <plugin id="org.apache.cordova.videoeditor" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
-	<name>VideoEditorPlugin</name>
+	<name>VideoEditor</name>
 	<description>A plugin to assist in video editing tasks</description>
     <keywords>cordova,video,editing,transcoding,encoding</keywords>
     <repo>https://github.com/jbavari/cordova-plugin-video-editor.git</repo>
