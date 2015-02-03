@@ -1,0 +1,282 @@
+//Log.i(Prefs.TAG, "Overriding the command with hard coded command");
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/in.m4v -vf transpose=1 -s 160x120 -r 30 -aspect 4:3 -ab 48000 -ac 2 -ar 22050 -b 2097k -vcodec mpeg4 /sdcard/videokit/vid_trans.mp4";
+					
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/in.mp4 /sdcard/videokit/out.mp4";
+					//commandStr = "ffmpeg -i /sdcard/videokit/in.mp4 -b:v 2097k \"/sdcard/videokit/out.mp4\"";
+					//commandStr = "ffmpeg -formats";
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/in.mp4 -strict experimental -vf transpose=1 -s 160x120 -r 30 -aspect 4:3 -ab 48000 -ac 2 -ar 22050 -b 2097k /sdcard/videokit/vid_trans.mp4";
+					
+					// working, fade is from the first frame till the 5th
+					//commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic00%d.jpg -shortest -i /sdcard/videokit/in.mp3 -acodec copy -vf fade=in:0:5 /sdcard/videokit/out.avi";
+					
+					// working but I can't see any result
+					//commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic00%d.jpg -shortest -i /sdcard/videokit/in.mp3 -acodec copy -vf fade=in:0:25 -vf fade=out:175:25 /sdcard/videokit/out.avi";
+					
+					//not working
+					//commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic00%d.jpg -shortest -i /sdcard/videokit/in.mp3 -acodec copy -vf fade=t=in:st=2.5:d=1.5 /sdcard/videokit/out.avi";
+					
+					//commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic00%d.jpg -shortest -i /sdcard/videokit/in.mp3 -acodec copy -vf fade=slide:0:3 /sdcard/videokit/out.avi";
+					
+					// working but it seems like its in secs not frames
+					//commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic00%d.jpg -shortest -i /sdcard/videokit/in.mp3 -acodec copy -vf fade=in:0:10 /sdcard/videokit/out.avi";
+					
+					//working the best
+					//commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic%d.jpg -shortest -i /sdcard/videokit/in.mp3 -acodec copy -vf fade=in:0:5 /sdcard/videokit/out.avi";
+					
+					// working and looks awesome! (on n7 and gs1)
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/in.mp4 -acodec copy -vf fade=in:0:5 /sdcard/videokit/out.mp4";
+					
+					//commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic00%d.jpg -vf fade=in:0:10 /sdcard/videokit/out.avi";
+					
+					//commandStr = "ffmpeg -i /sdcard/videokit/in.mp4 -aspect 1:1 -vf split [main][tmp];[tmp] crop=iw/2:ih:0:0, hflip[tp],[tp] pad=2*iw[left]; [main] crop=iw/2:ih:iw/2:0[right]; [left][right] overlay=W/2 -vb 20M -r 23.956 /sdcard/videokit/outs.mp4";
+					
+					// works
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/in.mp4 -strict experimental /sdcard/videokit/out.mp4";
+										
+					// working
+					//String[] complexCommand = {"ffmpeg","-i", "/sdcard/videokit 2/in.mp4"};
+					
+					// working as complex commad
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/in.mp4 -acodec copy -vf fade=in:0:5 /sdcard/videokit/out.mp4";
+					//String[] complexCommand = {"ffmpeg","-i", "/sdcard/videokit 2/in.mp4", "-acodec", "copy", "-vf", "fade=in:0:5", "/sdcard/videokit 2/out.mp4"};
+					
+					// works
+					//commandStr = "ffmpeg -i in2.mp4 -vf \"crop=iw/2:ih:0:0,split[tmp],pad=2*iw[left]; [tmp]hflip[right]; [left][right] overlay=W/2\" -vb 20M -r 23.956 outs.mp4";
+					//String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental", "-vf", "crop=iw/2:ih:0:0,split[tmp],pad=2*iw[left]; [tmp]hflip[right]; [left][right] overlay=W/2", "-vb", "20M", "-r", "23.956", "/sdcard/videokit/out.mp4"};
+					
+					// works mp3 support
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/in.mp4 -vn -ar 44100 -ac 2 -ab 128k -f mp3 /sdcard/videokit/in.mp3";
+					
+					// ffmpeg -i INPUT -vf "split [main][tmp]; [tmp] crop=iw:ih/2:0:0, vflip [flip]; [main][flip] overlay=0:H/2" OUTPUT
+					//String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental", "-vf", "split [main][tmp]; [tmp] crop=iw:ih/2:0:0, vflip [flip]; [main][flip] overlay=0:H/2", "-vb", "20M", "-r", "23.956", "/sdcard/videokit/out.mp4"};
+					
+					// works great better performance no crash
+					//commandStr = "ffmpeg -y -i /sdcard/videokit/mo.mkv -strict experimental -s 320x240 -r 30 -aspect 3:4 -ab 48000 -ac 2 -ar 22050 -vcodec mpeg4 -b 2097152 /sdcard/videokit/out.mp4";
+					
+					// vintage filter
+					commandStr = "ffmpeg -y -i /sdcard/videokit/in.mp4 -strict experimental -vf curves=vintage -s 640x480 -r 30 -aspect 4:3 -ab 48000 -ac 2 -ar 22050 -b 2097k -vcodec mpeg4 /sdcard/videokit/curve.mp4";
+					
+					// fade in and out transition.
+					String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.m4v","-acodec", "copy", "-vf", "fade=t=in:st=0:d=5, fade=t=out:st=20:d=5", "/sdcard/videokit/out.mp4"};
+					//
+					
+					// works, join 2 files using of the same size using filter_complex
+					//String[] complexCommand = {"ffmpeg","-y","-i", "/sdcard/videokit/in1.mp4", "-i", "/sdcard/videokit/in2.mp4", "-strict","experimental", "-filter_complex", "[0:0] [0:1] [1:0] [1:1] concat=n=2:v=1:a=1", "/sdcard/videokit/out.mp4"};
+
+					
+					// filter with sample.mp4 that use mpeg4 codec works very fast and finish in less then one minute
+					String[] complexCommand = {"ffmpeg","-threads", "0", "-y" ,"-i", "/sdcard/videokit/sample.mp4","-strict","experimental", "-vf", "crop=iw/2:ih:0:0,split[tmp],pad=2*iw[left]; [tmp]hflip[right]; [left][right] overlay=W/2", "-vcodec", "mpeg4", "-vb", "20M", "-r", "23.956", "/sdcard/videokit/out.mp4"};
+					
+					// verified on galaxyS1
+					commandStr = "ffmpeg -y -r 1/5 -i /sdcard/videokit/pic00%d.jpg /sdcard/videokit/out.mp4";
+					
+					// simple mp3 encoding
+					commandStr = "ffmpeg -y -i /sdcard/videokit/out.wav /sdcard/videokit/sha2.mp3";
+					
+					// multiply curves
+					String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental","-vf", "curves=enable='between(t,1,2)':preset=vintage, curves=enable='between(t,2,3)':preset=cross_process","-b", "2097k", "-vcodec", "mpeg4", "/sdcard/videokit/out.mp4"};
+					
+					//increase video speed
+					//String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental", "-an", "-filter:v", "setpts=0.5*PTS", "-b", "2097k","-r","60", "-vcodec", "mpeg4", "/sdcard/videokit/out.mp4"};
+					
+					// increase video and audio speed
+					String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental", "-filter_complex", "[0:v]setpts=0.5*PTS[v];[0:a]atempo=2.0[a]","-map","[v]","-map","[a]", "-b", "2097k","-r","60", "-vcodec", "mpeg4", "/sdcard/videokit/out.mp4"};
+					
+					// to save a stream to a file use this commad on one device: ffmpeg -i /sdcard/one3.mp4 -f mpegts udp://192.168.0.107:8090
+					// this needs internet permission in the manifest. 
+					// on a second device use this to save the stream:
+					//String[] complexCommand = {"ffmpeg","-y" ,"-i", "udp://192.168.0.108:8090","-strict","experimental","-crf", "30","-preset", "ultrafast", "-acodec", "aac", "-ar", "44100", "-ac", "2", "-b:a", "96k", "-vcodec", "libx264", "-r", "25", "-b:v", "500k", "-f", "flv", "/sdcard/videokit/t.flv"};
+					
+					// concat (join) videos with different codecs, and different sizes, different rate (limitation, needs the same aspect on both videos):
+					//ffmpeg -y -i one3s3.mp4 -i in2.mp4 -filter_complex "[0:v]scale=w=160:h=120[v1]; [1:v]scale=w=160:h=120[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" -s 160x120 -b 2097k -vcodec mpeg4 out.mp4
+					
+					// slow a video section, no audio (verified)
+					String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/Movies/sample.mp4","-strict","experimental", "-an", "-filter_complex", 
+							"[0:v]trim=0:10,setpts=PTS-STARTPTS[v1];[0:v]trim=10:30,setpts=PTS-STARTPTS[v2];[0:v]trim=start=30,setpts=PTS-STARTPTS[v3];[v2]setpts=PTS/0.5[slowv];[v1][slowv][v3]concat=n=3:v=1:a=0[out]",
+							"-map", "[out]", "/sdcard/videokit/out.mp4"};
+					
+				   // slow a video section, with audio (verified)			
+				   String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/Movies/sample.mp4","-strict","experimental", "-filter_complex", 
+							   "[0:v]trim=0:10,setpts=PTS-STARTPTS[v1];" + 
+							    "[0:a]atrim=0:10,atempo=1.0[a1];" +
+								"[0:v]trim=10:30,setpts=PTS-STARTPTS[v2];" +
+								"[0:a]atrim=10:30,atempo=1.0[a2];" +
+								"[0:v]trim=start=30,setpts=PTS-STARTPTS[v3];" +
+								"[0:a]atrim=start=30,atempo=1.0[a3];" +
+								"[v2]setpts=PTS/0.5[slowv];" +
+								"[a2]atempo=0.5[slowa];" +
+								"[v1][slowv][v3]concat=n=3:v=1:a=0[outv];" +
+								"[a1][slowa][a3]concat=n=3:v=0:a=1[outa]",
+								"-map", "[outv]","-map", "[outa]", "/sdcard/videokit/out.mp4"};
+								
+								
+				// very long command with watermark
+				String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/VID_20140227_142140.3gp","-i",
+				 "/sdcard/videokit/trackingnew.png","-strict","experimental", "-filter_complex",
+				  "[0:v][1:v]overlay=185.96396:132.09067:enable='between(t,0.437,0.562)'[v1];[v1][1:v]overlay=220.66852:125.84473:enable='between(t,0.562,0.597)'[v2];[v2][1:v]overlay=253.22607:124.75571:enable='between(t,0.597,0.682)'[v3];[v3][1:v]overlay=294.98828:116.10318:enable='between(t,0.682,0.726)'[v4];[v4][1:v]overlay=324.03815:106.97739:enable='between(t,0.726,0.773)'[v5];[v5][1:v]overlay=363.21826:110.773926:enable='between(t,0.773,0.83)'[v6];[v6][1:v]overlay=427.48273:127.89096:enable='between(t,0.83,0.855)'[v7];[v7][1:v]overlay=460.9756:136.49918:enable='between(t,0.855,0.865)'[v8];[v8][1:v]overlay=489.92505:142.29282:enable='between(t,0.865,0.886)'[v9];[v9][1:v]overlay=538.6529:158.47998:enable='between(t,0.886,0.917)'[v10];[v10][1:v]overlay=584.642:173.7435:enable='between(t,0.917,0.958)'[v11];[v11][1:v]overlay=642.15186:188.25229:enable='between(t,0.958,0.979)'[v12];[v12][1:v]overlay=672.31934:196.60611:enable='between(t,0.979,0.989)'[v13];[v13][1:v]overlay=699.896:203.36328:enable='between(t,0.989,1.041)'[v14];[v14][1:v]overlay=740.93835:210.96533:enable='between(t,1.041,1.102)'[v15];[v15][1:v]overlay=803.6376:222.68652:enable='between(t,1.102,1.132)'[v16];[v16][1:v]overlay=836.63477:231.57324:enable='between(t,1.132,1.164)'[v17];[v17][1:v]overlay=873.00964:245.33563:enable='between(t,1.164,1.21)'[v18];[v18][1:v]overlay=906.4186:266.7741:enable='between(t,1.22,1.266)'[v19];[v19][1:v]overlay=931.8954:306.19025:enable='between(t,1.266,1.307)'[v20];[v20][1:v]overlay=936.921:332.66113:enable='between(t,1.307,1.348)'[v21];[v21][1:v]overlay=838.07776:402.6245:enable='between(t,1.348,1.384)'[v22];[v22][1:v]overlay=802.18787:406.25507:enable='between(t,1.384,1.384)'[v23];[v23][1:v]overlay=757.7615:403.82892:enable='between(t,1.384,1.394)'[v24];[v24][1:v]overlay=715.3602:401.0005:enable='between(t,1.394,1.42)'[v25];[v25][1:v]overlay=672.5525:388.06152:enable='between(t,1.42,1.43)'[v26];[v26][1:v]overlay=638.4736:374.08282:enable='between(t,1.43,1.44)'[v27];[v27][1:v]overlay=603.2891:359.15137:enable='between(t,1.44,1.459)'[v28];[v28][1:v]overlay=568.8094:344.77606:enable='between(t,1.459,1.489)'[v29];[v29][1:v]overlay=531.9871:304.528:enable='between(t,1.489,1.52)'[v30];[v30][1:v]overlay=505.93732:245.67316:enable='between(t,1.52,1.561)'[v31];[v31][1:v]overlay=514.2386:195.42007:enable='between(t,1.561,1.582)'[v32];[v32][1:v]overlay=535.38934:155.72836:enable='between(t,1.582,1.654)'[v33];[v33][1:v]overlay=558.08813:116.79492:enable='between(t,1.654,1.717)'[v34];[v34][1:v]overlay=532.5391:128.27817:enable='between(t,1.717,1.727)'[v35];[v35][1:v]overlay=507.2837:140.53452:enable='between(t,1.727,1.748)'[v36];[v36][1:v]overlay=461.18896:163.5957:enable='between(t,1.748,1.789)'[v37];[v37][1:v]overlay=371.71112:223.34766:enable='between(t,1.789,1.809)'[v38];[v38][1:v]overlay=346.06744:249.00684:enable='between(t,1.809,1.82)'[v39];[v39][1:v]overlay=321.6928:273.39618:enable='between(t,1.82,1.83)'[v40];[v40][1:v]overlay=301.59357:296.0119:enable='between(t,1.83,1.841)'[v41];[v41][1:v]overlay=283.6009:316.98944:enable='between(t,1.841,1.943)'[v42];[v42][1:v]overlay=316.81598:317.0959:enable='between(t,1.943,1.971)'[v43];[v43][1:v]overlay=348.2995:300.25928:enable='between(t,1.971,1.982)'[v44];[v44][1:v]overlay=409.83685:270.5573:enable='between(t,1.982,1.992)'[v45];[v45][1:v]overlay=446.44098:256.4914:enable='between(t,1.992,2.002)'[v46];[v46][1:v]overlay=479.48535:247.71661:enable='between(t,2.012,2.033)'[v47];[v47][1:v]overlay=549.1329:233.62128:enable='between(t,2.033,2.076)'[v48];[v48][1:v]overlay=591.4321:232.2381:enable='between(t,2.076,2.096)'[v49];[v49][1:v]overlay=617.9075:238.14374:enable='between(t,2.096,2.118)'[v50];[v50][1:v]overlay=643.88544:267.8537:enable='between(t,2.118,2.149)'[v51];[v51][1:v]overlay=655.8364:303.53204:enable='between(t,2.149,2.176)'[v52];[v52][1:v]overlay=660.7993:355.37042:enable='between(t,2.176,2.237)'[v53];[v53][1:v]overlay=665.2983:414.28693:enable='between(t,2.237,2.304)'[v54];[v54][1:v]overlay=700.09015:412.50946:enable='between(t,2.304,2.315)'[v55];[v55][1:v]overlay=714.4037:387.08038:enable='between(t,2.315,2.335)'[v56];[v56][1:v]overlay=734.9225:365.3703:enable='between(t,2.335,2.373)'[v57];[v57][1:v]overlay=778.1057:270.9051:enable='between(t,2.373,2.388)'[v58];[v58][1:v]overlay=789.79236:245.33478:enable='between(t,2.388,2.398)'[v59];[v59][1:v]overlay=803.4359:215.36652:enable='between(t,2.398,2.547)'[v60];[v60][1:v]overlay=618.61786:361.02557:enable='between(t,2.547,2.557)'[v61];[v61][1:v]overlay=566.7581:387.1325:enable='between(t,2.557,2.6)'[v62];[v62][1:v]overlay=535.82983:387.3418:enable='between(t,2.6,2.621)'[v63];[v63][1:v]overlay=516.2774:348.13312:enable='between(t,2.631,2.642)'[v64];[v64][1:v]overlay=511.523:320.32764:enable='between(t,2.642,2.68)'[v65];[v65][1:v]overlay=528.059:224.30829:enable='between(t,2.68,2.711)'[v66];[v66][1:v]overlay=558.72363:155.73032:enable='between(t,2.711,2.711)'[v67];[v67][1:v]overlay=575.0727:128.01205:enable='between(t,2.711,2.722)'[v68];[v68][1:v]overlay=-19.084595:414.53662:enable='between(t,6.995,7.088)'[v69];[v69][1:v]overlay=72.963745:390.55548:enable='between(t,7.088,7.098)'[v70];[v70][1:v]overlay=107.848785:391.92188:enable='between(t,7.098,7.108)'[v71];[v71][1:v]overlay=149.55566:394.87714:enable='between(t,7.108,7.126)'[v72];[v72][1:v]overlay=194.10071:399.5669:enable='between(t,7.126,7.136)'[v73];[v73][1:v]overlay=280.47675:411.98633:enable='between(t,7.136,7.146)'[v74];[v74][1:v]overlay=327.75995:421.45264:enable='between(t,7.146,7.167)'[v75];[v75][1:v]overlay=369.2105:433.0464:enable='between(t,7.167,7.176)'[v76];[v76][1:v]overlay=458.57806:460.13525:enable='between(t,7.176,7.187)'[v77];[v77][1:v]overlay=498.2729:469.2295:enable='between(t,7.187,7.217)'[v78];[v78][1:v]overlay=584.1057:492.9245:enable='between(t,7.217,7.227)'[v79];[v79][1:v]overlay=652.64404:507.9626:enable='between(t,7.227,7.238)'[v80];[v80][1:v]overlay=684.7283:513.02765:enable='between(t,7.238,7.267)'[v81];[v81][1:v]overlay=714.7865:517.5122:enable='between(t,7.267,7.277)'",
+				   "-b", "15496k", "-vcodec", "mpeg4", "/sdcard/videokit/out.mp4"};
+				   
+			  
+			  // drawtext filter (not supported)
+			  String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-vf", "drawtext=\"fontsize=60:fontfile=/system/fonts/DroidSans.ttf:fontcolor=green:text=AAAA:x=(w-max_glyph_w)/2:y=h/2-ascent\"","-strict","experimental","-b", "2097k", "-vcodec", "mpeg4","/sdcard/videokit/out11.mp4"};
+				
+				
+			// this command needs a size parameter for it to work
+			String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/VID_20140226_160959.mp4","-i", "/sdcard/videokit/trackingnew.png","-strict","experimental", "-filter_complex", "[0:v][1:v]overlay=185.96396:132.09067:enable='between(t,0.437,0.562)'[v1];[v1][1:v]overlay=220.66852:125.84473:enable='between(t,0.562,0.597)'[v2];[v2][1:v]overlay=253.22607:124.75571:enable='between(t,0.597,0.682)'[v3];[v3][1:v]overlay=294.98828:116.10318:enable='between(t,0.682,0.726)'[v4];[v4][1:v]overlay=324.03815:106.97739:enable='between(t,0.726,0.773)'[v5];[v5][1:v]overlay=363.21826:110.773926:enable='between(t,0.773,0.83)'[v6];[v6][1:v]overlay=427.48273:127.89096:enable='between(t,0.83,0.855)'[v7];[v7][1:v]overlay=460.9756:136.49918:enable='between(t,0.855,0.865)'[v8];[v8][1:v]overlay=489.92505:142.29282:enable='between(t,0.865,0.886)'[v9];[v9][1:v]overlay=538.6529:158.47998:enable='between(t,0.886,0.917)'[v10];[v10][1:v]overlay=584.642:173.7435:enable='between(t,0.917,0.958)'[v11];[v11][1:v]overlay=642.15186:188.25229:enable='between(t,0.958,0.979)'[v12];[v12][1:v]overlay=672.31934:196.60611:enable='between(t,0.979,0.989)'[v13];[v13][1:v]overlay=699.896:203.36328:enable='between(t,0.989,1.041)'[v14];[v14][1:v]overlay=740.93835:210.96533:enable='between(t,1.041,1.102)'[v15];[v15][1:v]overlay=803.6376:222.68652:enable='between(t,1.102,1.132)'[v16];[v16][1:v]overlay=836.63477:231.57324:enable='between(t,1.132,1.164)'[v17];[v17][1:v]overlay=873.00964:245.33563:enable='between(t,1.164,1.21)'[v18];[v18][1:v]overlay=906.4186:266.7741:enable='between(t,1.22,1.266)'[v19];[v19][1:v]overlay=931.8954:306.19025:enable='between(t,1.266,1.307)'[v20];[v20][1:v]overlay=936.921:332.66113:enable='between(t,1.307,1.348)'[v21];[v21][1:v]overlay=838.07776:402.6245:enable='between(t,1.348,1.384)'[v22];[v22][1:v]overlay=802.18787:406.25507:enable='between(t,1.384,1.384)'[v23];[v23][1:v]overlay=757.7615:403.82892:enable='between(t,1.384,1.394)'[v24];[v24][1:v]overlay=715.3602:401.0005:enable='between(t,1.394,1.42)'[v25];[v25][1:v]overlay=672.5525:388.06152:enable='between(t,1.42,1.43)'[v26];[v26][1:v]overlay=638.4736:374.08282:enable='between(t,1.43,1.44)'[v27];[v27][1:v]overlay=603.2891:359.15137:enable='between(t,1.44,1.459)'[v28];[v28][1:v]overlay=568.8094:344.77606:enable='between(t,1.459,1.489)'[v29];[v29][1:v]overlay=531.9871:304.528:enable='between(t,1.489,1.52)'[v30];[v30][1:v]overlay=505.93732:245.67316:enable='between(t,1.52,1.561)'[v31];[v31][1:v]overlay=514.2386:195.42007:enable='between(t,1.561,1.582)'[v32];[v32][1:v]overlay=535.38934:155.72836:enable='between(t,1.582,1.654)'[v33];[v33][1:v]overlay=558.08813:116.79492:enable='between(t,1.654,1.717)'[v34];[v34][1:v]overlay=532.5391:128.27817:enable='between(t,1.717,1.727)'[v35];[v35][1:v]overlay=507.2837:140.53452:enable='between(t,1.727,1.748)'[v36];[v36][1:v]overlay=461.18896:163.5957:enable='between(t,1.748,1.789)'[v37];[v37][1:v]overlay=371.71112:223.34766:enable='between(t,1.789,1.809)'[v38];[v38][1:v]overlay=346.06744:249.00684:enable='between(t,1.809,1.82)'[v39];[v39][1:v]overlay=321.6928:273.39618:enable='between(t,1.82,1.83)'[v40];[v40][1:v]overlay=301.59357:296.0119:enable='between(t,1.83,1.841)'[v41];[v41][1:v]overlay=283.6009:316.98944:enable='between(t,1.841,1.943)'[v42];[v42][1:v]overlay=316.81598:317.0959:enable='between(t,1.943,1.971)'[v43];[v43][1:v]overlay=348.2995:300.25928:enable='between(t,1.971,1.982)'[v44];[v44][1:v]overlay=409.83685:270.5573:enable='between(t,1.982,1.992)'[v45];[v45][1:v]overlay=446.44098:256.4914:enable='between(t,1.992,2.002)'[v46];[v46][1:v]overlay=479.48535:247.71661:enable='between(t,2.012,2.033)'[v47];[v47][1:v]overlay=549.1329:233.62128:enable='between(t,2.033,2.076)'[v48];[v48][1:v]overlay=591.4321:232.2381:enable='between(t,2.076,2.096)'[v49];[v49][1:v]overlay=617.9075:238.14374:enable='between(t,2.096,2.118)'[v50];[v50][1:v]overlay=643.88544:267.8537:enable='between(t,2.118,2.149)'[v51];[v51][1:v]overlay=655.8364:303.53204:enable='between(t,2.149,2.176)'[v52];[v52][1:v]overlay=660.7993:355.37042:enable='between(t,2.176,2.237)'[v53];[v53][1:v]overlay=665.2983:414.28693:enable='between(t,2.237,2.304)'[v54];[v54][1:v]overlay=700.09015:412.50946:enable='between(t,2.304,2.315)'[v55];[v55][1:v]overlay=714.4037:387.08038:enable='between(t,2.315,2.335)'[v56];[v56][1:v]overlay=734.9225:365.3703:enable='between(t,2.335,2.373)'[v57];[v57][1:v]overlay=778.1057:270.9051:enable='between(t,2.373,2.388)'[v58];[v58][1:v]overlay=789.79236:245.33478:enable='between(t,2.388,2.398)'[v59];[v59][1:v]overlay=803.4359:215.36652:enable='between(t,2.398,2.547)'[v60];[v60][1:v]overlay=618.61786:361.02557:enable='between(t,2.547,2.557)'[v61];[v61][1:v]overlay=566.7581:387.1325:enable='between(t,2.557,2.6)'[v62];[v62][1:v]overlay=535.82983:387.3418:enable='between(t,2.6,2.621)'[v63];[v63][1:v]overlay=516.2774:348.13312:enable='between(t,2.631,2.642)'[v64];[v64][1:v]overlay=511.523:320.32764:enable='between(t,2.642,2.68)'[v65];[v65][1:v]overlay=528.059:224.30829:enable='between(t,2.68,2.711)'[v66];[v66][1:v]overlay=558.72363:155.73032:enable='between(t,2.711,2.711)'[v67];[v67][1:v]overlay=575.0727:128.01205:enable='between(t,2.711,2.722)'[v68];[v68][1:v]overlay=-19.084595:414.53662:enable='between(t,6.995,7.088)'[v69];[v69][1:v]overlay=72.963745:390.55548:enable='between(t,7.088,7.098)'[v70];[v70][1:v]overlay=107.848785:391.92188:enable='between(t,7.098,7.108)'[v71];[v71][1:v]overlay=149.55566:394.87714:enable='between(t,7.108,7.126)'[v72];[v72][1:v]overlay=194.10071:399.5669:enable='between(t,7.126,7.136)'[v73];[v73][1:v]overlay=280.47675:411.98633:enable='between(t,7.136,7.146)'[v74];[v74][1:v]overlay=327.75995:421.45264:enable='between(t,7.146,7.167)'[v75];[v75][1:v]overlay=369.2105:433.0464:enable='between(t,7.167,7.176)'[v76];[v76][1:v]overlay=458.57806:460.13525:enable='between(t,7.176,7.187)'[v77];[v77][1:v]overlay=498.2729:469.2295:enable='between(t,7.187,7.217)'[v78];[v78][1:v]overlay=584.1057:492.9245:enable='between(t,7.217,7.227)'[v79];[v79][1:v]overlay=652.64404:507.9626:enable='between(t,7.227,7.238)'[v80];[v80][1:v]overlay=684.7283:513.02765:enable='between(t,7.238,7.267)'[v81];[v81][1:v]overlay=714.7865:517.5122:enable='between(t,7.267,7.277)'", "-b", "15496k", "-vcodec", "mpeg4","-acodec","copy", "/sdcard/videokit/out.mp4"};	
+			
+			// supports amr input audio
+		   String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/testu.mp4","-i", "/sdcard/videokit/trackingnew.png","-strict","experimental", "-filter_complex", "[0:v][1:v]overlay=185.96396:132.09067:enable='between(t,0.437,0.562)'[v1];[v1][1:v]overlay=220.66852:125.84473:enable='between(t,0.562,0.597)'[v2];[v2][1:v]overlay=253.22607:124.75571:enable='between(t,0.597,0.682)'[v3];[v3][1:v]overlay=294.98828:116.10318:enable='between(t,0.682,0.726)'[v4];[v4][1:v]overlay=324.03815:106.97739:enable='between(t,0.726,0.773)'[v5];[v5][1:v]overlay=363.21826:110.773926:enable='between(t,0.773,0.83)'[v6];[v6][1:v]overlay=427.48273:127.89096:enable='between(t,0.83,0.855)'[v7];[v7][1:v]overlay=460.9756:136.49918:enable='between(t,0.855,0.865)'[v8];[v8][1:v]overlay=489.92505:142.29282:enable='between(t,0.865,0.886)'[v9];[v9][1:v]overlay=538.6529:158.47998:enable='between(t,0.886,0.917)'[v10];[v10][1:v]overlay=584.642:173.7435:enable='between(t,0.917,0.958)'[v11];[v11][1:v]overlay=642.15186:188.25229:enable='between(t,0.958,0.979)'[v12];[v12][1:v]overlay=672.31934:196.60611:enable='between(t,0.979,0.989)'[v13];[v13][1:v]overlay=699.896:203.36328:enable='between(t,0.989,1.041)'[v14];[v14][1:v]overlay=740.93835:210.96533:enable='between(t,1.041,1.102)'[v15];[v15][1:v]overlay=803.6376:222.68652:enable='between(t,1.102,1.132)'[v16];[v16][1:v]overlay=836.63477:231.57324:enable='between(t,1.132,1.164)'[v17];[v17][1:v]overlay=873.00964:245.33563:enable='between(t,1.164,1.21)'[v18];[v18][1:v]overlay=906.4186:266.7741:enable='between(t,1.22,1.266)'[v19];[v19][1:v]overlay=931.8954:306.19025:enable='between(t,1.266,1.307)'[v20];[v20][1:v]overlay=936.921:332.66113:enable='between(t,1.307,1.348)'[v21];[v21][1:v]overlay=838.07776:402.6245:enable='between(t,1.348,1.384)'[v22];[v22][1:v]overlay=802.18787:406.25507:enable='between(t,1.384,1.384)'[v23];[v23][1:v]overlay=757.7615:403.82892:enable='between(t,1.384,1.394)'[v24];[v24][1:v]overlay=715.3602:401.0005:enable='between(t,1.394,1.42)'[v25];[v25][1:v]overlay=672.5525:388.06152:enable='between(t,1.42,1.43)'[v26];[v26][1:v]overlay=638.4736:374.08282:enable='between(t,1.43,1.44)'[v27];[v27][1:v]overlay=603.2891:359.15137:enable='between(t,1.44,1.459)'[v28];[v28][1:v]overlay=568.8094:344.77606:enable='between(t,1.459,1.489)'[v29];[v29][1:v]overlay=531.9871:304.528:enable='between(t,1.489,1.52)'[v30];[v30][1:v]overlay=505.93732:245.67316:enable='between(t,1.52,1.561)'[v31];[v31][1:v]overlay=514.2386:195.42007:enable='between(t,1.561,1.582)'[v32];[v32][1:v]overlay=535.38934:155.72836:enable='between(t,1.582,1.654)'[v33];[v33][1:v]overlay=558.08813:116.79492:enable='between(t,1.654,1.717)'[v34];[v34][1:v]overlay=532.5391:128.27817:enable='between(t,1.717,1.727)'[v35];[v35][1:v]overlay=507.2837:140.53452:enable='between(t,1.727,1.748)'[v36];[v36][1:v]overlay=461.18896:163.5957:enable='between(t,1.748,1.789)'[v37];[v37][1:v]overlay=371.71112:223.34766:enable='between(t,1.789,1.809)'[v38];[v38][1:v]overlay=346.06744:249.00684:enable='between(t,1.809,1.82)'[v39];[v39][1:v]overlay=321.6928:273.39618:enable='between(t,1.82,1.83)'[v40];[v40][1:v]overlay=301.59357:296.0119:enable='between(t,1.83,1.841)'[v41];[v41][1:v]overlay=283.6009:316.98944:enable='between(t,1.841,1.943)'[v42];[v42][1:v]overlay=316.81598:317.0959:enable='between(t,1.943,1.971)'[v43];[v43][1:v]overlay=348.2995:300.25928:enable='between(t,1.971,1.982)'[v44];[v44][1:v]overlay=409.83685:270.5573:enable='between(t,1.982,1.992)'[v45];[v45][1:v]overlay=446.44098:256.4914:enable='between(t,1.992,2.002)'[v46];[v46][1:v]overlay=479.48535:247.71661:enable='between(t,2.012,2.033)'[v47];[v47][1:v]overlay=549.1329:233.62128:enable='between(t,2.033,2.076)'[v48];[v48][1:v]overlay=591.4321:232.2381:enable='between(t,2.076,2.096)'[v49];[v49][1:v]overlay=617.9075:238.14374:enable='between(t,2.096,2.118)'[v50];[v50][1:v]overlay=643.88544:267.8537:enable='between(t,2.118,2.149)'[v51];[v51][1:v]overlay=655.8364:303.53204:enable='between(t,2.149,2.176)'[v52];[v52][1:v]overlay=660.7993:355.37042:enable='between(t,2.176,2.237)'[v53];[v53][1:v]overlay=665.2983:414.28693:enable='between(t,2.237,2.304)'[v54];[v54][1:v]overlay=700.09015:412.50946:enable='between(t,2.304,2.315)'[v55];[v55][1:v]overlay=714.4037:387.08038:enable='between(t,2.315,2.335)'[v56];[v56][1:v]overlay=734.9225:365.3703:enable='between(t,2.335,2.373)'[v57];[v57][1:v]overlay=778.1057:270.9051:enable='between(t,2.373,2.388)'[v58];[v58][1:v]overlay=789.79236:245.33478:enable='between(t,2.388,2.398)'[v59];[v59][1:v]overlay=803.4359:215.36652:enable='between(t,2.398,2.547)'[v60];[v60][1:v]overlay=618.61786:361.02557:enable='between(t,2.547,2.557)'[v61];[v61][1:v]overlay=566.7581:387.1325:enable='between(t,2.557,2.6)'[v62];[v62][1:v]overlay=535.82983:387.3418:enable='between(t,2.6,2.621)'[v63];[v63][1:v]overlay=516.2774:348.13312:enable='between(t,2.631,2.642)'[v64];[v64][1:v]overlay=511.523:320.32764:enable='between(t,2.642,2.68)'[v65];[v65][1:v]overlay=528.059:224.30829:enable='between(t,2.68,2.711)'[v66];[v66][1:v]overlay=558.72363:155.73032:enable='between(t,2.711,2.711)'[v67];[v67][1:v]overlay=575.0727:128.01205:enable='between(t,2.711,2.722)'[v68];[v68][1:v]overlay=-19.084595:414.53662:enable='between(t,6.995,7.088)'[v69];[v69][1:v]overlay=72.963745:390.55548:enable='between(t,7.088,7.098)'[v70];[v70][1:v]overlay=107.848785:391.92188:enable='between(t,7.098,7.108)'[v71];[v71][1:v]overlay=149.55566:394.87714:enable='between(t,7.108,7.126)'[v72];[v72][1:v]overlay=194.10071:399.5669:enable='between(t,7.126,7.136)'[v73];[v73][1:v]overlay=280.47675:411.98633:enable='between(t,7.136,7.146)'[v74];[v74][1:v]overlay=327.75995:421.45264:enable='between(t,7.146,7.167)'[v75];[v75][1:v]overlay=369.2105:433.0464:enable='between(t,7.167,7.176)'[v76];[v76][1:v]overlay=458.57806:460.13525:enable='between(t,7.176,7.187)'[v77];[v77][1:v]overlay=498.2729:469.2295:enable='between(t,7.187,7.217)'[v78];[v78][1:v]overlay=584.1057:492.9245:enable='between(t,7.217,7.227)'[v79];[v79][1:v]overlay=652.64404:507.9626:enable='between(t,7.227,7.238)'[v80];[v80][1:v]overlay=684.7283:513.02765:enable='between(t,7.238,7.267)'[v81];[v81][1:v]overlay=714.7865:517.5122:enable='between(t,7.267,7.277)'","-s", "1280x720","-r", "30", "-b", "15496k", "-vcodec", "mpeg4","-ab", "48000", "-ac", "2", "-ar", "22050", "/sdcard/videokit/out.mp4"};	
+		   
+		   
+		   // join 3 files works
+		   ffmpeg -y -i in1.mp4 -i in2.mp4 -i in3.mp4 -strict experimental -filter_complex "[0:v] [0:a] [1:v] [1:a] [2:v] [2:a] concat=n=3:v=1:a=1" out.mp4	
+		   
+		   // this video contained a 2 video streams and one audio, I used this command to remove the first video stream
+		   ffmpeg -y -i /sdcard/vk2/m2/sup_17_aug_2012.wmv -strict experimental -map 0:1 -map 0:2 /sdcard/vk2/m2/sup_17_aug_2012_s1.wmv		
+		   
+		   // overlay example
+		   String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental", "-vf", "movie=/sdcard/videokit/watermark.png [watermark]; [in][watermark] overlay=main_w-overlay_w-10:10 [out]","-s", "320x240","-r", "30", "-b", "15496k", "-vcodec", "mpeg4","-ab", "48000", "-ac", "2", "-ar", "22050", "/sdcard/videokit/out.mp4"};
+
+		   // convert mp4 to 3gp
+		   String commandStr =  "ffmpeg -y -i /sdcard/videokit/in.mp4 -r 20 -s 352x288 -b 400k -acodec aac -strict experimental -ac 1 -ar 8000 -ab 24k /sdcard/videokit/out.3gp";
+		   
+		    // using this command specifically -profile", "baseline","-level", "3.0" help to support old devices (iPhone 3)
+			String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/tmp/inputvideo.mp4","-strict","experimental", "-vcodec", "libx264", "-preset", "ultrafast", "-crf", "24","-profile", "baseline","-level", "3.0", "/sdcard/videokit/out5.mp4"};
+			
+			// reduce blue
+			String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental","-vf", "curves=enable='between(t,1,2)':blue='0.5/0.40'","-b", "2097k", "-vcodec", "mpeg4", "/sdcard/videokit/out.mp4"};	
+				
+		   // add blue
+		   String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental","-vf", "curves=enable='between(t,1,2)':blue='0.5/0.58'","-b", "2097k", "-vcodec", "mpeg4", "/sdcard/videokit/out.mp4"};	
+		   
+		   
+		   // concat (join) videos added aspect (not working if the aspect is not the same):
+		   ffmpeg -y -i one3.mp4 -i in2.mp4 -filter_complex "[0:v]scale=w=160:h=120[v1]; [1:v]scale=w=160:h=120[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" -s 160x120 -aspect 4:3 -b 2097k -vcodec mpeg4 out.mp4
+		   
+		   // the same as above but using -1
+		   ffmpeg -y -i one3.mp4 -i in3.mp4 -filter_complex "[0:v]scale=160:-1[v1]; [1:v]scale=160:-1[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" -s 160x120 -aspect 4:3 -b 2097k -vcodec mpeg4 out.mp4	
+		   
+		   // also works but not when the aspect is different
+		   ffmpeg -y -i one3.mp4 -i in3.mp4 -filter_complex "[0:v]scale=160:trunc(ow/a/2)*2[v1]; [1:v]scale=160:trunc(ow/a/2)*2[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" -s 160x120 -aspect 4:3 -b 2097k -vcodec mpeg4 out.mp4	
+		   
+		   // works with different aspects!
+		   ffmpeg -y -i one3.mp4 -i in2.mp4 -filter_complex "[0:v]scale=160:120,setsar=1:1[v1]; [1:v]scale=160:120,setsar=1:1[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" -s 160x120 -aspect 4:3 -b 2097k -vcodec mpeg4 out.mp4
+		   
+		   // also works (using x)
+		   ffmpeg -y -i one3.mp4 -i in2.mp4 -filter_complex "[0:v]scale=160x120,setsar=1:1[v1]; [1:v]scale=160x120,setsar=1:1[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]" -map "[v]" -map "[a]" -s 160x120 -aspect 4:3 -b 2097k -vcodec mpeg4 out.mp4
+		 
+		   // watermark new, test with watermark.png 128x128, add it to /sdcard/videokit/
+		   String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental", "-vf", "movie=/sdcard/videokit/watermark.png [watermark]; [in][watermark] overlay=main_w-overlay_w-10:10 [out]","-s", "320x240","-r", "30", "-b", "15496k", "-vcodec", "mpeg4","-ab", "48000", "-ac", "2", "-ar", "22050", "/sdcard/videokit/out.mp4"};  
+		   
+		   // trim out command (not tested)
+		   // trim=startTimeSecs:endTimeSecs
+		   // if trim:start=startTimsSecs then the end is automaticly the end of the video
+		    String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/Movies/sample.mp4","-strict","experimental", "-filter_complex", 
+							   "[0:v]trim=0:10[v1];" + 
+							    "[0:a]atrim=0:10[a1];" +
+								"[0:v]trim=10:30[remove_v];" +
+								"[0:a]atrim=10:30[remove_a;" +
+								"[0:v]trim=start=30[v3];" +
+								"[0:a]atrim=start=30[a3];" +
+								"[v1][v3]concat=n=2:v=1:a=0[outv];" +
+								"[a1][a3]concat=n=2:v=0:a=1[outa]",
+								"-map", "[outv]","-map", "[outa]", "/sdcard/videokit/out.mp4"};
+								
+		
+		  // Since remove_a, remove_v are not used, they should be removed, and support for mp4 -> not working on the new engine
+		  // stuck when getting to the second trim, should on vk2 (1.1.03) it works, since the engine does not exit when the error happen
+		  String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/Movies/sample.mp4","-strict","experimental", "-filter_complex", 
+							   "[0:v]trim=0:10[v1];" + 
+							    "[0:a]atrim=0:10[a1];" +
+								"[0:v]trim=start=30[v3];" +
+								"[0:a]atrim=start=30[a3];" +
+								"[v1][v3]concat=n=2:v=1:a=0[outv];" +
+								"[a1][a3]concat=n=2:v=0:a=1[outa]",
+								"-map", "[outv]","-map", "[outa]",
+								"-b", "2097k", "-vcodec", "mpeg4", "/sdcard/videokit/out.mp4"};
+								
+		
+		join command (as complex command):
+		String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4",
+									"-i", "/sdcard/videokit/20140702_152343.mp4",
+									"-strict","experimental","-filter_complex",
+									 "[0:v]scale=w=160:h=120[v1]; [1:v]scale=w=160:h=120[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]",
+									 "-map","[v]","-map","[a]", "-b", "2097k", "-vcodec", "mpeg4", 
+									 "-ab", "48000", "-ac", "2", "-ar", "22050"
+									 "/sdcard/videokit/output.mp4"};
+									 
+	
+	    join command (as complex command) with support for Aspect (not tested):
+		String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4",
+									"-i", "/sdcard/videokit/20140702_152343.mp4",
+									"-strict","experimental","-filter_complex",
+									 "[0:v]scale=160x120,setsar=1:1[v1]; [1:v]scale=160x120,setsar=1:1[v2]; [v1][0:a][v2][1:a] concat=n=2:v=1:a=1 [v] [a]",
+									 "-map","[v]","-map","[a]", "-b", "2097k", "-vcodec", "mpeg4", 
+									 "-ab", "48000", "-ac", "2", "-ar", "22050"
+									 "/sdcard/videokit/output.mp4"};
+									 
+	 
+	   ffmpeg -i in.mp4 -c copy -metadata:s:v:0 rotate=90 output.mp4
+	   String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental","-c", "copy","-metadata:s:v:0","rotate=90", "/sdcard/videokit/out.mp4"};
+								
+		
+	   // 1.Create video from images. (I know the commands)
+	   // 2. Add sound to a video ex: audio1 from video duration 0 to 1 minute, audio2 from duration 1 to 2 min and audio3 from duration 0 to end of the video.
+	   String[] complexCommand = {"ffmpeg","-y" ,"-f","image2","-r", "1/5","-i", "/sdcard/videokit/pic00%d.png","-itsoffset", "10","-i","/sdcard/videokit/in.mp3","-itsoffset","15","-i","/sdcard/videokit/in.mp3","-s","640x480","-r","25","-b:v","2000k","-c:v","mpeg4","-c:a","aac", "-strict","experimental","-b:a", "32k","-shortest", "/sdcard/videokit/out.mp4"}								
+		
+		
+	   // compress with h264
+	   ffmpeg -y -i /sdcard/videokit/in.mp4 -strict experimental -vcodec libx264 -preset ultrafast -crf 24 -acodec aac -ar 44100 -ac 2 -b:a 96k -s 320x240 -aspect 4:3 /sdcard/videokit/out3.mp4
+	   
+	   // compress complex
+	   String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/videokit/in.mp4","-strict","experimental","-s", "160x120","-r","25", "-vcodec", "mpeg4", "-b", "150k", "-ab","48000", "-ac", "2", "-ar", "22050", "/sdcard/videokit/out.mp4"};
+	   
+	   // audio compress
+ 	   //String commandStr = "ffmpeg -y -i /sdcard/vk2/in.wav -ar 44100 -ac 2 -ab 64k -f mp3 /sdcard/videokit/out.mp3";
+ 	   
+ 	   // cut (trim) with video and audio encoding, works for all video and audio types.
+ 	   ffmpeg -ss 00:00:19.000 -y -i /sdcard/videokit/sample.mp4 -strict experimental -t 00:00:02.000 -s 320x240 -r 15 -vcodec mpeg4 -b 2097152 -ab 48000 -ac 2 -b 2097152 -ar 22050 /sdcard/videokit/out.mp4
+ 	   
+	   // cut (trim) with video copy, and audio encoding, should work for most video types, faster then above.
+	   // ffmpeg -ss 00:00:01.302 -y -i /sdcard/vk2/in.mp4 -strict experimental -vcodec copy -ab 48000 -ac 2 -b 2097152 -ar 22050 -t 00:00:02.100 /sdcard/vk2_out/in.mp4							
+		
+	   // looping on a picture and adding audio
+	   String commandStr = "ffmpeg -y -loop 1 -i /sdcard/videokit/pic001.jpg -i /sdcard/videokit/in.mp3 -strict experimental -s 1270x720 -r 25 -aspect 16:9 -vcodec mpeg4 -vcodec mpeg4 -acodec copy -shortest /sdcard/videokit/out2.mp4";
+	   
+	  // looping on a picture and adding audio with audio encoding support 
+	  String commandStr = "ffmpeg -y -loop 1 -i /sdcard/videokit/pic001.jpg -i /sdcard/videokit/in.mp3 -strict experimental -s 1270x720 -r 25 -aspect 16:9 -vcodec mpeg4 -vcodec mpeg4 -ab 48000 -ac 2 -b 2097152 -ar 22050 -shortest /sdcard/videokit/out2.mp4";
+	  
+	   // vintage + watermark
+	  String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/Movies/sample.mp4","-strict","experimental",
+				"-vf", 
+			    "movie=/sdcard/videokit/watermark002.png [watermark];" + 
+			    "[in][watermark] overlay=main_w-overlay_w-10:10 [out_overlay];" +
+			    "[out_overlay]curves=vintage[out]",  
+				"-s", "320x240","-r", "30", "-b", "15496k", "-vcodec", "mpeg4","-ab", "48000", "-ac", "2", "-ar", "22050",
+				"/sdcard/videokit/out_water_vinta.mp4"};
+	
+	
+	 // overlay 2 videos side by side
+	 String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/Movies/sample.mp4","-i", "/sdcard/Movies/sample2.mp4", "-strict","experimental",
+				"-filter_complex", 
+			    "[0:v:0]pad=iw*2:ih[bg];" + 
+			    "[bg][1:v:0]overlay=w",
+				"-s", "320x240","-r", "30", "-b", "15496k", "-vcodec", "mpeg4","-ab", "48000", "-ac", "2", "-ar", "22050",
+				"/sdcard/videokit/out.mp4"}; 
+				
+	// watermark + audio replace
+	String[] complexCommand = {"ffmpeg","-y" ,"-i", "/sdcard/Movies/sample.mp4","-i", "/sdcard/videokit/in.mp3", "-strict","experimental",
+				"-filter_complex",
+				"[1:a]atempo=1.0[a1];" +
+			    "movie=/sdcard/videokit/watermark002.png [watermark];" + 
+			    "[0:v][watermark] overlay=main_w-overlay_w-10:10 [outv]",
+			    "-map", "[outv]", "-map", "[a1]",
+				"-s", "320x240","-r", "30", "-b", "15496k", "-vcodec", "mpeg4","-ab", "48000", "-ac", "2", "-ar", "22050",
+				"-shortest","/sdcard/videokit/out_water.mp4"};
+				
+				
+	// create a slideshow video (best way)
+	commandStr = "ffmpeg -y -framerate 1/0.833000 -i /sdcard/slide_10/slide_%d.png -i /sdcard/slide_10/audio.mp3 -c:v libx264 -s 480x480 -c:a aac -strict experimental /sdcard/slide_10/video.mp4";
+	
+	
+	   

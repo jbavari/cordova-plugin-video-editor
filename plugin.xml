@@ -22,6 +22,8 @@
                 <param name="android-package" value="org.apache.cordova.videoeditor.VideoEditor" />
             </feature>
         </config-file>
+        <!-- add ffmpeg4android lib -->
+        <source-file src="src/android/ffmpeg4android_lib" target-dir="." />
         <!-- add plugin class -->
         <source-file src="src/android/VideoEditor.java" target-dir="src/org/apache/cordova/videoeditor" />
     </platform>
