@@ -12,9 +12,11 @@ import org.json.JSONException;
 import com.netcompss.loader.LoadJNI;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.Uri;
 import android.os.Environment;
 import android.util.Log;
 
@@ -63,7 +65,7 @@ public class VideoEditor extends CordovaPlugin {
         
         ApplicationInfo ai;
         try {
-            ai = pm.getApplicationInfo( cordova.getActivity().getPackageName(), 0);
+            ai = pm.getApplicationInfo(cordova.getActivity().getPackageName(), 0);
         } catch (final NameNotFoundException e) {
             ai = null;
         }
@@ -109,7 +111,8 @@ public class VideoEditor extends CordovaPlugin {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         
         final String outputFilePath =  new File(
-            mediaStorageDir.getPath() + File.separator + "VID_" + timeStamp + outputExtension
+            mediaStorageDir.getPath(),
+            "VID_" + timeStamp + outputExtension
         ).getAbsolutePath();
         
         Log.v(TAG, "outputFilePath: " + outputFilePath);
@@ -166,10 +169,15 @@ public class VideoEditor extends CordovaPlugin {
                         return;
                     }
                     
-                    Boolean deletedInFile = inFile.delete(); // remove the input file
-                    if (!deletedInFile) {
+                    // remove the original input file
+                    if (!inFile.delete()) {
                         Log.d(TAG, "unable to delete in file");
                     }
+                    
+                    // remove the input file from the gallery
+                    Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                    scanIntent.setData(Uri.fromFile(inFile));
+                    appContext.sendBroadcast(scanIntent);
                     
                     callback.success(outputFilePath);
                 } catch (Throwable e) {

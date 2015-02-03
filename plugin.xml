@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="org.apache.cordova.videoediting" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="org.apache.cordova.videoeditor" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
 	<name>VideoEditorPlugin</name>
 	<description>A plugin to assist in video editing tasks</description>
     <keywords>cordova,video,editing,transcoding,encoding</keywords>
@@ -11,8 +11,8 @@
 		<clobbers target="VideoEditorPlugin" />
 	</js-module>
 
-    <js-module name="VideoEditorConstants" src="www/VideoEditorConstants.js">
-        <clobbers target="VideoEditorConstants" />
+    <js-module name="VideoEditorOptions" src="www/VideoEditorOptions.js">
+        <clobbers target="VideoEditorOptions" />
     </js-module>
 
     <!-- android -->
@@ -23,7 +23,7 @@
             </feature>
         </config-file>
         <!-- add ffmpeg4android lib -->
-        <source-file src="src/android/ffmpeg4android_lib" target-dir="." />
+        <framework src="src/android/ffmpeg4android_lib" custom="true" />
         <!-- add plugin class -->
         <source-file src="src/android/VideoEditor.java" target-dir="src/org/apache/cordova/videoeditor" />
     </platform>
