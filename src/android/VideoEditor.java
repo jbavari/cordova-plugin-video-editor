@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -85,7 +86,7 @@ public class VideoEditor extends CordovaPlugin {
             "outputFileName", 
             new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
-        final int outputType = options.getInt("outputFileType");
+        final int outputType = options.optInt("outputFileType", MPEG4);
         
         Log.d(TAG, "videoSrcPath: " + videoSrcPath);
                         
@@ -131,6 +132,8 @@ public class VideoEditor extends CordovaPlugin {
         ).getAbsolutePath();
         
         Log.v(TAG, "outputFilePath: " + outputFilePath);
+        
+        final double videoDuration = options.optDouble("duration", 0);
        
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {             
@@ -138,39 +141,42 @@ public class VideoEditor extends CordovaPlugin {
                 LoadJNI vk = new LoadJNI();
                  try {
                     String workFolder = appContext.getFilesDir().getAbsolutePath();
+                                        
+                    ArrayList<String> al = new ArrayList<String>();
+                    al.add("ffmpeg");
+                    al.add("-y"); // overwrite output files
+                    al.add("-i"); // input file
+                    al.add(videoSrcPath); 
+                    al.add("-strict");
+                    al.add("experimental");
+                    al.add("-s"); // frame size (resolution)
+                    al.add("720x480"); // TODO: provide res choices from quality plugin argument
+                    al.add("-r"); // fps, TODO: control fps based on quality plugin argument
+                    al.add("24"); 
+                    al.add("-vcodec");
+                    al.add("libx264"); // mpeg4 works good too
+                    al.add("-preset");
+                    al.add("ultrafast"); // needed b/c libx264 doesn't utilize all CPU cores
+                    al.add("-b");
+                    al.add("2097152"); // TODO: allow tuning the video bitrate based on quality plugin argument
+                    //al.add("-ab"); // can't find this in ffmpeg docs, not sure on this yet
+                    //al.add("48000");
+                    al.add("-ac"); // audio channels 
+                    al.add("1");
+                    al.add("-ar"); // sampling frequency
+                    al.add("22050"); 
+                    if (videoDuration != 0) {
+                        //al.add("-ss"); // start position may be either in seconds or in hh:mm:ss[.xxx] form.
+                        //al.add("0");
+                        al.add("-t"); // duration may be a number in seconds, or in hh:mm:ss[.xxx] form.
+                        al.add(Double.toString(videoDuration));
+                    }
                     
-                    String[] complexCommand = {
-                        "ffmpeg" ,
-                        "-y", // overwrite output files
-                        "-i", // input file
-                        videoSrcPath, 
-                        "-strict",
-                        "experimental",
-                        "-s", // frame size (resolution)
-                        "720x480", // TODO: provide res choices from quality plugin argument
-                        "-r", // fps, TODO: control fps based on quality plugin argument
-                        "24", 
-                        "-vcodec", 
-                        //"mpeg4", // TODO: try libx264 with -preset ultrafast flag
-                        "libx264",
-                        "-preset",
-                        "ultrafast",
-                        "-b",
-                        "2097152", // TODO: allow tuning the video bitrate based on quality plugin argument
-                        //"-ab", // can't find this in ffmpeg docs, not sure on this yet
-                        //"48000",
-                        "-ac", // audio channels 
-                        "2",
-                        "-ar", // sampling frequency
-                        "22050", 
-                        //"ss", // start position
-                        //"00:00:00",
-                        //"-t", // end position, TODO: allow specifying duration & do same for iOS
-                        //"00:00:01",
-                        outputFilePath
-                    };
+                    al.add(outputFilePath); // output file at end of string
                     
-                    vk.run(complexCommand, workFolder, appContext);
+                    String[] ffmpegCommand = al.toArray(new String[al.size()]);
+                    
+                    vk.run(ffmpegCommand, workFolder, appContext);
                     
                     Log.d(TAG, "ffmpeg4android finished");
                     

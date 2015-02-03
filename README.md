@@ -1,7 +1,7 @@
 This is a cordova plugin to assist in several video editing tasks such as:
 
 * Transcoding
-* Trimming (TODO)
+* Trimming
 * Taking still images from time moments (TODO)
 
 After looking at an article on [How Vine Satisfied Its Need for Speed](http://www.technologyreview.com/view/510511/how-vine-satisfies-its-need-for-speed/), it was clear Cordova/Phonegap needed a way to modify videos to be faster for app's that need that speed.
@@ -21,7 +21,8 @@ VideoEditorPlugin.transcodeVideo(
         outputFileName: 'output-name', // the file name for the transcoded video
         quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
         outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
-        optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES
+        optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
+        duration: 20 // optional, specify duration in seconds from start of video
     }
 )
 ```
@@ -68,7 +69,8 @@ function videoCaptureSuccess(mediaFiles) {
             outputFileName: videoFileName, 
             quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
             outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
-            optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES
+            optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
+            duration: 20
         }
     );
 }

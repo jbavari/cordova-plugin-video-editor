@@ -39,19 +39,21 @@
     
     switch(qualityType) {
         case HighQuality:
-            presetName = AVAssetExportPresetHighestQuality;
+            presetName = AVAssetExportPresetHighestQuality; // 360x480
             break;
         case MediumQuality:
         default:
-            presetName = AVAssetExportPresetMediumQuality;
+            presetName = AVAssetExportPresetMediumQuality; // 360x480
             break;
         case LowQuality:
-            presetName = AVAssetExportPresetLowQuality;
+            presetName = AVAssetExportPresetLowQuality; // 144x192
     }
 
     CDVOutputFileType outputFileType = ([options objectForKey:@"outputFileType"]) ? [[options objectForKey:@"outputFileType"] intValue] : MPEG4;
     
     BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? YES : NO;
+    
+    int videoDuration = [[options objectForKey:@"duration"] intValue];
     
     NSString *stringOutputFileType = Nil;
     NSString *outputExtension = Nil;
@@ -104,10 +106,13 @@
         
         NSLog(@"videopath of your file = %@", videoPath);
         
-        //CMTime start = CMTimeMakeWithSeconds(1.0, 600);
-        //CMTime duration = CMTimeMakeWithSeconds(3.0, 600);
-        //CMTimeRange range = CMTimeRangeMake(start, duration);
-        //exportSession.timeRange = range;
+        if (videoDuration)
+        {
+            CMTime startTime = CMTimeMake(0, 1);
+            CMTime stopTime = CMTimeMake(videoDuration, 1);
+            CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
+            exportSession.timeRange = exportTimeRange;
+        }
 
         [exportSession exportAsynchronouslyWithCompletionHandler:^{
             switch ([exportSession status]) {
