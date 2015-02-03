@@ -1,11 +1,19 @@
 package org.apache.cordova.videoeditor;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.netcompss.loader.LoadJNI;
 
@@ -14,8 +22,10 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.MediaStore;
 import android.util.Log;
 
 /**
@@ -40,44 +50,42 @@ public class VideoEditor extends CordovaPlugin {
         this.callback = callbackContext;
 
         if (action.equals("transcodeVideo")) {
-            this.transcodeVideo(args);
+            try {
+                this.transcodeVideo(args);
+            } catch (IOException e) {
+                callback.error(e.toString());
+            }
             return true;
         }
         return false;
     }
 
-    private void transcodeVideo(JSONArray args) throws JSONException {
+    private void transcodeVideo(JSONArray args) throws JSONException, IOException {
         Log.d(TAG, "transcodeVideo firing");
         /*  transcodeVideo arguments:
-         * INDEX   ARGUMENT
-         *  0       video input url
-         *  1       output file name
-         *  2       quality
-         *  3       output file type
-         *  4       optimize for network use
+         fileUri: video input url
+         outputFileName: output file name
+         quality: transcode quality
+         outputFileType: output file type
+         optimizeForNetworkUse: optimize for network use
          */
         
-        final File inFile = new File(args.getString(0).replace("file:", ""));
-        final Context appContext = cordova.getActivity().getApplicationContext();
-        final PackageManager pm = appContext.getPackageManager();
-        
-        ApplicationInfo ai;
-        try {
-            ai = pm.getApplicationInfo(cordova.getActivity().getPackageName(), 0);
-        } catch (final NameNotFoundException e) {
-            ai = null;
-        }
-        final String applicationName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
-        
+        JSONObject options = args.optJSONObject(0);
+        Log.d(TAG, "options: " + options.toString());
+
+        final File inFile = this.resolveLocalFileSystemURI(options.getString("fileUri"));
         if (!inFile.exists()) {
             Log.d(TAG, "input file does not exist");
             callback.error("input video does not exist.");
             return;
         }
-        
+                        
         final String videoSrcPath = inFile.getAbsolutePath();
-        final String outputFileName = args.getString(1);
-        final int outputType = args.getInt(2);
+        final String outputFileName = options.optString(
+            "outputFileName", 
+            new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
+        );
+        final int outputType = options.getInt("outputFileType");
         
         Log.d(TAG, "videoSrcPath: " + videoSrcPath);
                         
@@ -94,9 +102,20 @@ public class VideoEditor extends CordovaPlugin {
             outputExtension = ".mp4";
         }
         
+        final Context appContext = cordova.getActivity().getApplicationContext();
+        final PackageManager pm = appContext.getPackageManager();
+        
+        ApplicationInfo ai;
+        try {
+            ai = pm.getApplicationInfo(cordova.getActivity().getPackageName(), 0);
+        } catch (final NameNotFoundException e) {
+            ai = null;
+        }
+        final String appName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
+        
         File mediaStorageDir = new File(
             Environment.getExternalStorageDirectory() + "/Movies",
-            applicationName
+            appName
         );
         
         if (!mediaStorageDir.exists()) {
@@ -119,9 +138,6 @@ public class VideoEditor extends CordovaPlugin {
                 LoadJNI vk = new LoadJNI();
                  try {
                     String workFolder = appContext.getFilesDir().getAbsolutePath();
-                    //String[] complexCommand = {"ffmpeg","-i", videoSrcPath};
-                    
-                    // ffmpeg -y -i /sdcard/in.mp4 -strict experimental -s 160x120 -r 25 -vcodec mpeg4 -b 2097152 -ab 48000 -ac 2 -ar 22050 /sdcard/out.mp4﻿
                     
                     String[] complexCommand = {
                         "ffmpeg" ,
@@ -183,5 +199,46 @@ public class VideoEditor extends CordovaPlugin {
                 }
             }
         });
+    }
+    
+    @SuppressWarnings("deprecation")
+    private File resolveLocalFileSystemURI(String url) throws IOException, JSONException {
+        String decoded = URLDecoder.decode(url, "UTF-8");
+
+        File fp = null;
+
+        // Handle the special case where you get an Android content:// uri.
+        if (decoded.startsWith("content:")) {
+            Cursor cursor = this.cordova.getActivity().managedQuery(Uri.parse(decoded), new String[] { MediaStore.Images.Media.DATA }, null, null, null);
+            // Note: MediaStore.Images/Audio/Video.Media.DATA is always "_data"
+            int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+            cursor.moveToFirst();
+            fp = new File(cursor.getString(column_index));
+        } else {
+            // Test to see if this is a valid URL first
+            @SuppressWarnings("unused")
+            URL testUrl = new URL(decoded);
+
+            if (decoded.startsWith("file://")) {
+                int questionMark = decoded.indexOf("?");
+                if (questionMark < 0) {
+                    fp = new File(decoded.substring(7, decoded.length()));
+                } else {
+                    fp = new File(decoded.substring(7, questionMark));
+                }
+            } else if (decoded.startsWith("file:/")) {
+                fp = new File(decoded.substring(6, decoded.length()));
+            } else {
+                fp = new File(decoded);
+            }
+        }
+
+        if (!fp.exists()) {
+            throw new FileNotFoundException();
+        }
+        if (!fp.canRead()) {
+            throw new IOException();
+        }
+        return fp;
     }
 }

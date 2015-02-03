@@ -14,18 +14,20 @@ This plugin will address those concerns, hopefully.
 ```javascript
 // parameters passed to transcodeVideo
 VideoEditorPlugin.transcodeVideo(
-    fileUri, // the path to the video on the device
-    fileName, // the file name for the transcoded video
-    quality, // VideoEditorConstant
-    outputFileType, // VideoEditorConstant
-    optimizeForNetworkUse, // VideoEditorConstant
     success, // success cb
     error // error cb
+    {
+        fileUri: 'file-uri-here', // the path to the video on the device
+        outputFileName: 'output-name', // the file name for the transcoded video
+        quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
+        outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
+        optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES
+    }
 )
 ```
 ```javascript
-// constants used with transcodeVideo function
-var VideoEditorConstants = {
+// options used with transcodeVideo function
+var VideoEditorOptions = {
     Quality: {
         HIGH_QUALITY: 0,
         MEDIUM_QUALITY: 1,
@@ -58,14 +60,16 @@ function videoCaptureSuccess(mediaFiles) {
     var file = mediaFiles[0];
     var videoFileName = 'video-name-here';
 
-    VideoEditorPlugin.transcodeVideo(
-        file.fullPath, 
-        videoFileName, // I suggest generating a uuid for file name
-        VideoEditorConstants.Quality.MEDIUM_QUALITY,
-        VideoEditorConstants.OutputFileType.MPEG4,
-        VideoEditorConstants.OptimizeForNetworkUse.YES,
+    VideoEditor.transcodeVideo(
         videoTranscodeSuccess,
-        videoTranscodeError
+        videoTranscodeError,
+        {
+            fileUri: file.fullPath, 
+            outputFileName: videoFileName, 
+            quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
+            outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
+            optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES
+        }
     );
 }
 

@@ -7,8 +7,8 @@
     <license>Apache 2.0</license>
 
 
-	<js-module name="VideoEditorPlugin" src="www/VideoEditorPlugin.js">
-		<clobbers target="VideoEditorPlugin" />
+	<js-module name="VideoEditor" src="www/VideoEditor.js">
+		<clobbers target="VideoEditor" />
 	</js-module>
 
     <js-module name="VideoEditorOptions" src="www/VideoEditorOptions.js">
@@ -18,7 +18,7 @@
     <!-- android -->
     <platform name="android">
         <config-file target="config.xml" parent="/*">
-            <feature name="VideoEditorPlugin">
+            <feature name="VideoEditor">
                 <param name="android-package" value="org.apache.cordova.videoeditor.VideoEditor" />
             </feature>
         </config-file>
@@ -31,13 +31,13 @@
 	<!-- ios -->
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
-            <feature name="VideoEditorPlugin">
-                <param name="ios-package" value="VideoEditorPlugin"/>
+            <feature name="VideoEditor">
+                <param name="ios-package" value="VideoEditor"/>
             </feature>
         </config-file>
 
-        <header-file src="src/ios/VideoEditorPlugin.h" />
-        <source-file src="src/ios/VideoEditorPlugin.m" />
+        <header-file src="src/ios/VideoEditor.h" />
+        <source-file src="src/ios/VideoEditor.m" />
  	    <framework src="AssetsLibrary.framework" />
  	    <framework src="AVFoundation.framework" />
     </platform>
