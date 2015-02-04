@@ -6,7 +6,7 @@
 //
 
 var exec = require('cordova/exec'),
-    pluginName = 'VideoEditorPlugin';
+    pluginName = 'VideoEditor';
 
 function VideoEditor() {
 }
