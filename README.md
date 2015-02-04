@@ -61,6 +61,9 @@ function videoCaptureSuccess(mediaFiles) {
     var file = mediaFiles[0];
     var videoFileName = 'video-name-here'; // I suggest a uuid
 
+    // Wrap this call in a ~100 ms timeout on Android if
+    // you just recorded the video using the capture plugin.
+    // For some reason it is not available immediately in the file system.
     VideoEditor.transcodeVideo(
         videoTranscodeSuccess,
         videoTranscodeError,
