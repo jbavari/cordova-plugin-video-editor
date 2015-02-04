@@ -1,31 +1,44 @@
 <?xml version='1.0' encoding='utf-8'?>
-<plugin id="org.apache.cordova.videoediting" version="0.0.1" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
-	<name>VideoEditorPlugin</name>
-	<description>A plugin to assist in video editing tasks</description>
+<plugin id="org.apache.cordova.videoeditor" version="0.0.2" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>VideoEditor</name>
+    <description>A plugin to assist in video editing tasks</description>
     <keywords>cordova,video,editing,transcoding,encoding</keywords>
     <repo>https://github.com/jbavari/cordova-plugin-video-editor.git</repo>
     <license>Apache 2.0</license>
 
 
-	<js-module name="VideoEditorPlugin" src="www/VideoEditorPlugin.js">
-		<clobbers target="VideoEditorPlugin" />
-	</js-module>
-
-    <js-module name="VideoEditorConstants" src="www/VideoEditorConstants.js">
-        <clobbers target="VideoEditorConstants" />
+    <js-module name="VideoEditor" src="www/VideoEditor.js">
+        <clobbers target="VideoEditor" />
     </js-module>
 
-	<!-- ios -->
+    <js-module name="VideoEditorOptions" src="www/VideoEditorOptions.js">
+        <clobbers target="VideoEditorOptions" />
+    </js-module>
+
+    <!-- android -->
+    <platform name="android">
+        <config-file target="config.xml" parent="/*">
+            <feature name="VideoEditor">
+                <param name="android-package" value="org.apache.cordova.videoeditor.VideoEditor" />
+            </feature>
+        </config-file>
+        <!-- add ffmpeg4android lib -->
+        <framework src="src/android/ffmpeg4android_lib" custom="true" />
+        <!-- add plugin class -->
+        <source-file src="src/android/VideoEditor.java" target-dir="src/org/apache/cordova/videoeditor" />
+    </platform>
+
+    <!-- ios -->
     <platform name="ios">
         <config-file target="config.xml" parent="/*">
-            <feature name="VideoEditorPlugin">
-                <param name="ios-package" value="VideoEditorPlugin"/>
+            <feature name="VideoEditor">
+                <param name="ios-package" value="VideoEditor"/>
             </feature>
         </config-file>
 
-        <header-file src="src/ios/VideoEditorPlugin.h" />
-        <source-file src="src/ios/VideoEditorPlugin.m" />
- 	    <framework src="AssetsLibrary.framework" />
- 	    <framework src="AVFoundation.framework" />
+        <header-file src="src/ios/VideoEditor.h" />
+        <source-file src="src/ios/VideoEditor.m" />
+        <framework src="AssetsLibrary.framework" />
+        <framework src="AVFoundation.framework" />
     </platform>
 </plugin>

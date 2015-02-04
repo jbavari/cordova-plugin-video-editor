@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+<string name="app_name">Demo</string>
+<string name="email">android@netcompss.com</string>
+<string name="full_app_name">FFmpeg4Android Demo</string>
+<string name="welcome_demo">FFmpeg4Android Demo shows how easy it is for every application to run FFMpeg commands.</string>
+<string name="welcome_1">Simple example using a AsyncTask without progress bar.\n
+    When using this technique, you will not be able to stop the operation while its running.</string>
+<string name="welcome_2">Simple progress bar example with stop support (you can cancel the transcoding when its running).</string>
+<string name="welcome_3">Progress bar with notification example (and stop / cancel support).\n
+    The notification will work only on Android 4 or above.\n
+    To support notifications on older versions, use the Android support library</string>
+<string name="commandTextView">This command will rotate /sdcard/videokit/in.mp4 90 degrees, and create /sdcard/videokit/out.mp4:</string>
+<string name="commandText">ffmpeg -y -i /sdcard/videokit/in.mp4 -strict experimental -vf transpose=1 -s 160x120 -r 30 -aspect 4:3 -ab 48000 -ac 2 -ar 22050 -b 2097k /sdcard/videokit/out.mp4</string>
+
+</resources>

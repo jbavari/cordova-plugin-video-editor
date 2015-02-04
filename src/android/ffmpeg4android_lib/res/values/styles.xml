@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<style name="t1">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@android:color/white</item>
+</style>
+<style name="h1">
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@android:color/white</item>
+         <item name="android:textStyle">bold</item>
+</style>
+
+<style name="h2">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@android:color/white</item>
+         <item name="android:textStyle">bold</item>
+</style>
+</resources>

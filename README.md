@@ -1,7 +1,7 @@
 This is a cordova plugin to assist in several video editing tasks such as:
 
 * Transcoding
-* Trimming (TODO)
+* Trimming
 * Taking still images from time moments (TODO)
 
 After looking at an article on [How Vine Satisfied Its Need for Speed](http://www.technologyreview.com/view/510511/how-vine-satisfies-its-need-for-speed/), it was clear Cordova/Phonegap needed a way to modify videos to be faster for app's that need that speed.
@@ -14,18 +14,21 @@ This plugin will address those concerns, hopefully.
 ```javascript
 // parameters passed to transcodeVideo
 VideoEditorPlugin.transcodeVideo(
-    fileUri, // the path to the video on the device
-    fileName, // the file name for the transcoded video
-    quality, // VideoEditorConstant
-    outputFileType, // VideoEditorConstant
-    optimizeForNetworkUse, // VideoEditorConstant
     success, // success cb
-    error // error cb
+    error, // error cb
+    {
+        fileUri: 'file-uri-here', // the path to the video on the device
+        outputFileName: 'output-name', // the file name for the transcoded video
+        quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
+        outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
+        optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
+        duration: 20 // optional, specify duration in seconds from start of video
+    }
 )
 ```
 ```javascript
-// constants used with transcodeVideo function
-var VideoEditorConstants = {
+// options used with transcodeVideo function
+var VideoEditorOptions = {
     Quality: {
         HIGH_QUALITY: 0,
         MEDIUM_QUALITY: 1,
@@ -56,16 +59,22 @@ navigator.device.capture.captureVideo(
 
 function videoCaptureSuccess(mediaFiles) {
     var file = mediaFiles[0];
-    var videoFileName = 'video-name-here';
+    var videoFileName = 'video-name-here'; // I suggest a uuid
 
-    VideoEditorPlugin.transcodeVideo(
-        file.fullPath, 
-        videoFileName, // I suggest generating a uuid for file name
-        VideoEditorConstants.Quality.MEDIUM_QUALITY,
-        VideoEditorConstants.OutputFileType.MPEG4,
-        VideoEditorConstants.OptimizeForNetworkUse.YES,
+    // Wrap this call in a ~100 ms timeout on Android if
+    // you just recorded the video using the capture plugin.
+    // For some reason it is not available immediately in the file system.
+    VideoEditor.transcodeVideo(
         videoTranscodeSuccess,
-        videoTranscodeError
+        videoTranscodeError,
+        {
+            fileUri: file.fullPath, 
+            outputFileName: videoFileName, 
+            quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
+            outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
+            optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
+            duration: 20
+        }
     );
 }
 
