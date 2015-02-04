@@ -13,7 +13,7 @@ This plugin will address those concerns, hopefully.
 ###Transcode###
 ```javascript
 // parameters passed to transcodeVideo
-VideoEditorPlugin.transcodeVideo(
+VideoEditor.transcodeVideo(
     success, // success cb
     error, // error cb
     {
