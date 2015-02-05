@@ -40,5 +40,6 @@
         <source-file src="src/ios/VideoEditor.m" />
         <framework src="AssetsLibrary.framework" />
         <framework src="AVFoundation.framework" />
+        <framework src="MediaPlayer.framework" />
     </platform>
 </plugin>
