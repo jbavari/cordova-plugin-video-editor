@@ -2,7 +2,7 @@ This is a cordova plugin to assist in several video editing tasks such as:
 
 * Transcoding
 * Trimming
-* Taking still images from time moments (TODO)
+* Taking still images from time moments (currently the start of a video)
 
 After looking at an article on [How Vine Satisfied Its Need for Speed](http://www.technologyreview.com/view/510511/how-vine-satisfies-its-need-for-speed/), it was clear Cordova/Phonegap needed a way to modify videos to be faster for app's that need that speed.
 
@@ -88,6 +88,18 @@ function videoTranscodeError(err) {
 }
 ```
 
+###Create JPEG Image From Video###
+```javascript
+VideoEditor.createThumbnail(
+    success, // success cb
+    error, // error cb
+    {
+        fileUri: 'file-uri-here', // the path to the video on the device
+        outputFileName: 'output-name' // the file name for the JPEG image
+    }
+)
+```
+
 ## On iOS
 
 [iOS Developer AVFoundation Documentation](https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/AVFoundationPG/Articles/01_UsingAssets.html#//apple_ref/doc/uid/TP40010188-CH7-SW8)
@@ -113,6 +125,3 @@ function videoTranscodeError(err) {
 [How to Port ffmpeg (the Program) to Android–Ideas and Thoughts](http://www.roman10.net/how-to-port-ffmpeg-the-program-to-androidideas-and-thoughts/)
 
 [How to Build Android Applications Based on FFmpeg by An Example](http://www.roman10.net/how-to-build-android-applications-based-on-ffmpeg-by-an-example/)
-
-### Other helpful tidbits:
-
