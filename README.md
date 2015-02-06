@@ -100,6 +100,40 @@ VideoEditor.createThumbnail(
 )
 ```
 
+```javascript
+// this example uses the cordova media capture plugin
+navigator.device.capture.captureVideo(
+    videoCaptureSuccess, 
+    videoCaptureError, 
+    { 
+        limit: 1, 
+        duration: 20 
+    }
+);
+
+function videoCaptureSuccess(mediaFiles) {
+    var file = mediaFiles[0];
+    var videoFileName = 'video-name-here'; // I suggest a uuid
+
+    // Wrap this call in a ~100 ms timeout on Android if
+    // you just recorded the video using the capture plugin.
+    // For some reason it is not available immediately in the file system.
+    VideoEditor.createThumbnail(
+        createThumbnailSuccess,
+        createThumbnailError,
+        {
+            fileUri: mediaFile.fullPath,
+            outputFileName: videoFileName
+        }
+    )
+}
+
+function createThumbnailSuccess(result) {
+    // result is the path to the jpeg image on the device
+    console.log('createThumbnailSuccess, result: ' + result);
+}
+```
+
 ## On iOS
 
 [iOS Developer AVFoundation Documentation](https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/AVFoundationPG/Articles/01_UsingAssets.html#//apple_ref/doc/uid/TP40010188-CH7-SW8)
