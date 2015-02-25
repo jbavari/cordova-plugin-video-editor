@@ -77,6 +77,9 @@
             break;
     }
     
+    // remove file:// from the assetPath if it is there
+    assetPath = [[assetPath stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
+    
     // check if the video can be saved to photo album before going further
     if (!UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(assetPath))
     {
