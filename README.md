@@ -22,7 +22,8 @@ VideoEditor.transcodeVideo(
         quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
         outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
         optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
-        duration: 20 // optional, specify duration in seconds from start of video
+        duration: 20, // optional, specify duration in seconds from start of video
+        saveToLibrary: true // optional, defaults to true
     }
 )
 ```

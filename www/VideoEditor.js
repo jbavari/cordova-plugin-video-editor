@@ -12,12 +12,10 @@ function VideoEditor() {
 }
 
 VideoEditor.prototype.transcodeVideo = function(success, error, options) {
-    // options = fileUri, outputFileName, quality, outputFileType, optimizeForNetworkUse
     exec(success, error, pluginName, 'transcodeVideo', [options]);
 };
 
 VideoEditor.prototype.createThumbnail = function(success, error, options) {
-    // options = fileUri, outputFileName
     exec(success, error, pluginName, 'createThumbnail', [options]);
 };
 

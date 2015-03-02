@@ -20,6 +20,7 @@
  quality: transcode quality
  outputFileType: output file type
  optimizeForNetworkUse: optimize for network use
+ saveToLibrary: bool - save to photo album
  */
 - (void) transcodeVideo:(CDVInvokedUrlCommand*)command
 {
@@ -50,9 +51,11 @@
 
     CDVOutputFileType outputFileType = ([options objectForKey:@"outputFileType"]) ? [[options objectForKey:@"outputFileType"] intValue] : MPEG4;
     
-    BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? YES : NO;
+    BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? [[options objectForKey:@"optimizeForNetworkUse"] intValue] : NO;
     
     float videoDuration = [[options objectForKey:@"duration"] floatValue];
+    
+    BOOL saveToPhotoAlbum = [options objectForKey:@"saveToLibrary"] ? [[options objectForKey:@"saveToLibrary"] boolValue] : YES;
     
     NSString *stringOutputFileType = Nil;
     NSString *outputExtension = Nil;
@@ -81,7 +84,7 @@
     assetPath = [[assetPath stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
     
     // check if the video can be saved to photo album before going further
-    if (!UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(assetPath))
+    if (saveToPhotoAlbum && !UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(assetPath))
     {
         NSString *error = @"Video cannot be saved to photo album";
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error ] callbackId:command.callbackId];
@@ -120,7 +123,9 @@
         [exportSession exportAsynchronouslyWithCompletionHandler:^{
             switch ([exportSession status]) {
                 case AVAssetExportSessionStatusCompleted:
-                    UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
+                    if (saveToPhotoAlbum) {
+                        UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
+                    }
                     NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
                     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoPath] callbackId:command.callbackId];
                     break;
