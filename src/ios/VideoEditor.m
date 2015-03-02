@@ -8,12 +8,11 @@
 #import <Cordova/CDV.h>
 #import "VideoEditor.h"
 
-
-@interface VideoEditorPlugin ()
+@interface VideoEditor ()
 
 @end
 
-@implementation VideoEditorPlugin
+@implementation VideoEditor
 
 /*  transcodeVideo arguments:
  fileUri: video input url
@@ -21,6 +20,7 @@
  quality: transcode quality
  outputFileType: output file type
  optimizeForNetworkUse: optimize for network use
+ saveToLibrary: bool - save to photo album
  */
 - (void) transcodeVideo:(CDVInvokedUrlCommand*)command
 {
@@ -51,9 +51,11 @@
 
     CDVOutputFileType outputFileType = ([options objectForKey:@"outputFileType"]) ? [[options objectForKey:@"outputFileType"] intValue] : MPEG4;
     
-    BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? YES : NO;
+    BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? [[options objectForKey:@"optimizeForNetworkUse"] intValue] : NO;
     
     float videoDuration = [[options objectForKey:@"duration"] floatValue];
+    
+    BOOL saveToPhotoAlbum = [options objectForKey:@"saveToLibrary"] ? [[options objectForKey:@"saveToLibrary"] boolValue] : YES;
     
     NSString *stringOutputFileType = Nil;
     NSString *outputExtension = Nil;
@@ -78,8 +80,11 @@
             break;
     }
     
+    // remove file:// from the assetPath if it is there
+    assetPath = [[assetPath stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
+    
     // check if the video can be saved to photo album before going further
-    if (!UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(assetPath))
+    if (saveToPhotoAlbum && !UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(assetPath))
     {
         NSString *error = @"Video cannot be saved to photo album";
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error ] callbackId:command.callbackId];
@@ -104,7 +109,7 @@
         exportSession.outputFileType = stringOutputFileType;
         exportSession.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
         
-        NSLog(@"videopath of your file = %@", videoPath);
+        NSLog(@"videopath of your file: %@", videoPath);
         
         if (videoDuration)
         {
@@ -118,7 +123,9 @@
         [exportSession exportAsynchronouslyWithCompletionHandler:^{
             switch ([exportSession status]) {
                 case AVAssetExportSessionStatusCompleted:
-                    UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
+                    if (saveToPhotoAlbum) {
+                        UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
+                    }
                     NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
                     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoPath] callbackId:command.callbackId];
                     break;
@@ -136,6 +143,74 @@
         }];
     }
 
+}
+
+- (void) createThumbnail:(CDVInvokedUrlCommand*)command
+{
+    NSDictionary* options = [command.arguments objectAtIndex:0];
+    
+    NSString* srcVideoPath = [options objectForKey:@"fileUri"];
+    NSString* outputFileName = [options objectForKey:@"outputFileName"];
+    
+    NSString* outputFilePath = extractVideoThumbnail(srcVideoPath, outputFileName);
+    
+    if (outputFilePath != nil)
+    {
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputFilePath] callbackId:command.callbackId];
+    }
+    else
+    {
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:outputFilePath] callbackId:command.callbackId];
+    }
+}
+
+NSString* extractVideoThumbnail(NSString *srcVideoPath, NSString *outputFileName)
+{
+    
+    UIImage *thumbnail;
+    NSURL *url;
+    
+    NSLog(@"srcVideoPath: %@", srcVideoPath);
+    
+    if ([srcVideoPath rangeOfString:@"://"].location == NSNotFound)
+    {
+        url = [NSURL URLWithString:[[@"file://localhost" stringByAppendingString:srcVideoPath] stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    }
+    else
+    {
+        url = [NSURL URLWithString:[srcVideoPath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    }
+    
+    // http://stackoverflow.com/a/6432050
+    MPMoviePlayerController *mp = [[MPMoviePlayerController alloc] initWithContentURL:url];
+    mp.shouldAutoplay = NO;
+    mp.initialPlaybackTime = 1;
+    mp.currentPlaybackTime = 1;
+    // get the thumbnail
+    thumbnail = [mp thumbnailImageAtTime:1 timeOption:MPMovieTimeOptionNearestKeyFrame];
+    [mp stop];
+    
+    NSString *outputFilePath = [documentsPathForFileName(outputFileName) stringByAppendingString:@".jpg"];
+    
+    NSLog(@"path to your video thumbnail: %@", outputFilePath);
+    
+    // write out the thumbnail; a return of nil will be a failure.
+    if ([UIImageJPEGRepresentation (thumbnail, 1.0) writeToFile:outputFilePath atomically:YES])
+    {
+        return outputFilePath;
+    }
+    else
+    {
+        return nil;
+    }
+}
+
+NSString *documentsPathForFileName(NSString *name)
+{
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask, YES);
+    NSString *documentsPath = [paths objectAtIndex:0];
+    
+    return [documentsPath stringByAppendingPathComponent:name];
 }
 
 @end

@@ -2,6 +2,7 @@ package org.apache.cordova.videoeditor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -24,6 +25,9 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.Bitmap.CompressFormat;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -57,6 +61,13 @@ public class VideoEditor extends CordovaPlugin {
         if (action.equals("transcodeVideo")) {
             try {
                 this.transcodeVideo(args);
+            } catch (IOException e) {
+                callback.error(e.toString());
+            }
+            return true;
+        } else if (action.equals("createThumbnail")) {
+            try {
+                this.createThumbnail(args);
             } catch (IOException e) {
                 callback.error(e.toString());
             }
@@ -227,6 +238,86 @@ public class VideoEditor extends CordovaPlugin {
                 }
             }
         });
+    }
+    
+    @SuppressWarnings("unused")
+    private void createThumbnail(JSONArray args) throws JSONException, IOException {
+        Log.d(TAG, "createThumbnail firing");
+        /*  createThumbnail arguments:
+         fileUri: video input url
+         outputFileName: output file name
+         */
+        
+        JSONObject options = args.optJSONObject(0);
+        Log.d(TAG, "options: " + options.toString());
+
+        File inFile = this.resolveLocalFileSystemURI(options.getString("fileUri"));
+        if (!inFile.exists()) {
+            Log.d(TAG, "input file does not exist");
+            callback.error("input video does not exist.");
+            return;
+        }
+        String srcVideoPath = inFile.getAbsolutePath();
+        String outputFileName = options.optString(
+            "outputFileName", 
+            new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
+        );
+        
+        Context appContext = cordova.getActivity().getApplicationContext();
+        PackageManager pm = appContext.getPackageManager();
+        
+        ApplicationInfo ai;
+        try {
+            ai = pm.getApplicationInfo(cordova.getActivity().getPackageName(), 0);
+        } catch (final NameNotFoundException e) {
+            ai = null;
+        }
+        final String appName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
+        
+        File mediaStorageDir = new File(
+            Environment.getExternalStorageDirectory() + "/Pictures",
+            appName
+        );
+        
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdir()) {
+                callback.error("Can't access or make Pictures directory");
+                return;
+            }
+        }
+        
+        File outputFile =  new File(
+            mediaStorageDir.getPath(),
+            "PIC_" + outputFileName + ".jpg"
+        );
+        
+        Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(srcVideoPath, MediaStore.Images.Thumbnails.MINI_KIND);
+        
+        FileOutputStream theOutputStream;
+        try {
+            if (!outputFile.exists()) {
+                if (!outputFile.createNewFile()) {
+                    callback.error("Could not save thumbnail.");
+                }
+            }
+            if (outputFile.canWrite()) {
+                theOutputStream = new FileOutputStream(outputFile);
+                if (theOutputStream != null) {
+                    thumbnail.compress(CompressFormat.JPEG, 75, theOutputStream);
+                } else {
+                    callback.error("Could not save thumbnail; target not writeable");
+                }
+            }
+        } catch (IOException e) {
+            callback.error(e.toString());
+        }
+        
+        // make the gallery display the new file and not the deleted one
+        Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+        scanIntent.setData(Uri.fromFile(outputFile));
+        appContext.sendBroadcast(scanIntent);
+        
+        callback.success(outputFile.getAbsolutePath());   
     }
     
     @SuppressWarnings("deprecation")
