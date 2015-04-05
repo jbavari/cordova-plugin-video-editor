@@ -200,7 +200,8 @@ public class VideoEditor extends CordovaPlugin {
                     
                     Clip clipOut = new Clip(outputFilePath);
                     clipOut.videoCodec = "libx264";
-                    //clipOut.videoFps = "24";
+                    clipOut.videoFps = "24"; // tailor this to your needs
+                    clipOut.videoBitrate = 512; // 512 kbps - tailor this to your needs
                     clipOut.audioChannels = 1;
                     clipOut.width = outputWidth;
                     clipOut.height = outputHeight;
