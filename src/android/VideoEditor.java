@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -17,7 +16,9 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.netcompss.loader.LoadJNI;
+import org.ffmpeg.android.FfmpegController;
+import org.ffmpeg.android.Clip;
+import org.ffmpeg.android.ShellUtils.ShellCallback;
 
 import android.content.ContentUris;
 import android.content.Context;
@@ -111,7 +112,9 @@ public class VideoEditor extends CordovaPlugin {
         Log.d(TAG, "videoSrcPath: " + videoSrcPath);
                         
         String outputExtension;
-        final String outputResolution; // arbitrary value used for ffmpeg, tailor to your needs
+        // arbitrary values used for ffmpeg, tailor to your needs
+        final int outputWidth;
+        final int outputHeight;
         
         switch(outputType) {
             case QUICK_TIME:
@@ -131,14 +134,17 @@ public class VideoEditor extends CordovaPlugin {
         
         switch(videoQuality) {
             case LowQuality:
-                outputResolution = "320x320";
+                outputWidth = 320;
+                outputHeight = 320;
                 break;
             case MediumQuality:
-                outputResolution = "480x480";
+                outputWidth = 480;
+                outputHeight = 480;
                 break;
             case HighQuality:
             default:
-                outputResolution = "640x640"; 
+                outputWidth = 640;
+                outputHeight = 640;
                 break;
         }
         
@@ -183,48 +189,27 @@ public class VideoEditor extends CordovaPlugin {
        
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {             
-                
-                LoadJNI vk = new LoadJNI();
+                            
                  try {
-                    String workFolder = appContext.getFilesDir().getAbsolutePath();
-                                        
-                    ArrayList<String> al = new ArrayList<String>();
-                    al.add("ffmpeg");
-                    al.add("-y"); // overwrite output files
-                    al.add("-i"); // input file
-                    al.add(videoSrcPath); 
-                    al.add("-strict");
-                    al.add("experimental");
-                    al.add("-s"); // frame size (resolution)
-                    al.add(outputResolution);
-                    al.add("-r"); // fps, TODO: control fps based on quality plugin argument
-                    al.add("24"); 
-                    al.add("-vcodec");
-                    al.add("libx264"); // mpeg4 works good too
-                    al.add("-preset");
-                    al.add("ultrafast"); // needed b/c libx264 doesn't utilize all CPU cores
-                    al.add("-b");
-                    al.add("2097152"); // TODO: allow tuning the video bitrate based on quality plugin argument
-                    //al.add("-ab"); // can't find this in ffmpeg docs, not sure on this yet
-                    //al.add("48000");
-                    al.add("-ac"); // audio channels 
-                    al.add("1");
-                    al.add("-ar"); // sampling frequency
-                    al.add("22050"); 
-                    if (videoDuration != 0) {
-                        //al.add("-ss"); // start position may be either in seconds or in hh:mm:ss[.xxx] form.
-                        //al.add("0");
-                        al.add("-t"); // duration may be a number in seconds, or in hh:mm:ss[.xxx] form.
-                        al.add(Double.toString(videoDuration));
-                    }
+                    File tempFile = File.createTempFile("ffmpeg", null, appContext.getCacheDir());
+                    FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
                     
-                    al.add(outputFilePath); // output file at end of string
+                    TranscodeCallback tcCallback = new TranscodeCallback();
                     
-                    String[] ffmpegCommand = al.toArray(new String[al.size()]);
+                    Clip clipIn = new Clip(videoSrcPath);
                     
-                    vk.run(ffmpegCommand, workFolder, appContext);
+                    Clip clipOut = new Clip(outputFilePath);
+                    clipOut.videoCodec = "libx264";
+                    clipOut.videoFps = "24"; // tailor this to your needs
+                    clipOut.videoBitrate = 512; // 512 kbps - tailor this to your needs
+                    clipOut.audioChannels = 1;
+                    clipOut.width = outputWidth;
+                    clipOut.height = outputHeight;
+                    clipOut.duration = videoDuration;
                     
-                    Log.d(TAG, "ffmpeg4android finished");
+                    ffmpegController.processVideo(clipIn, clipOut, true, tcCallback);
+
+                    Log.d(TAG, "ffmpeg finished");
                     
                     File outFile = new File(outputFilePath);
                     if (!outFile.exists()) {
@@ -249,11 +234,25 @@ public class VideoEditor extends CordovaPlugin {
                     
                     callback.success(outputFilePath);
                 } catch (Throwable e) {
-                    Log.d(TAG, "vk run exception.", e);
+                    Log.d(TAG, "transcode exception ", e);
                     callback.error(e.toString());
                 }
             }
         });
+    }
+    
+    private class TranscodeCallback implements ShellCallback {
+
+        @Override
+        public void shellOut(String shellLine) {
+            Log.v(TAG, "shellOut: " + shellLine);
+        }
+
+        @Override
+        public void processComplete(int exitValue) {
+            Log.v(TAG, "processComplete: " + exitValue);
+        }
+        
     }
     
     @SuppressWarnings("unused")
