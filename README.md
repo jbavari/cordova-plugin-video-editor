@@ -170,4 +170,5 @@ function createThumbnailSuccess(result) {
 ## License
 
 Android: GPL
+
 iOS: MIT
