@@ -166,3 +166,8 @@ function createThumbnailSuccess(result) {
 [How to Port ffmpeg (the Program) to Android–Ideas and Thoughts](http://www.roman10.net/how-to-port-ffmpeg-the-program-to-androidideas-and-thoughts/)
 
 [How to Build Android Applications Based on FFmpeg by An Example](http://www.roman10.net/how-to-build-android-applications-based-on-ffmpeg-by-an-example/)
+
+## License
+
+Android: GPL
+iOS: MIT
