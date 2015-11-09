@@ -8,6 +8,12 @@ After looking at an article on [How Vine Satisfied Its Need for Speed](http://ww
 
 This plugin will address those concerns, hopefully.
 
+## Installation
+```
+cordova plugin add https://github.com/jbavari/cordova-plugin-video-editor.git
+```
+`VideoEditor` and `VideoEditorOptions` will be available in the window after deviceready.
+
 ## Usage
 
 ###Transcode###
