@@ -183,9 +183,10 @@ public class VideoEditor extends CordovaPlugin {
             "VID_" + outputFileName + outputExtension
         ).getAbsolutePath();
         
-        Log.v(TAG, "outputFilePath: " + outputFilePath);
+        Log.d(TAG, "outputFilePath: " + outputFilePath);
         
         final double videoDuration = options.optDouble("duration", 0);
+        final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
        
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {             
@@ -220,16 +221,14 @@ public class VideoEditor extends CordovaPlugin {
                                         
                     // make the gallery display the new file if saving to library
                     if (saveToLibrary) {
-                        // remove the original input file when saving to gallery
-                        // comment out or remove the delete based on your needs
-                        if (!inFile.delete()) {
-                            Log.d(TAG, "unable to delete in file");
-                        }
-                        
                         Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                         scanIntent.setData(Uri.fromFile(inFile));
                         scanIntent.setData(Uri.fromFile(outFile));
                         appContext.sendBroadcast(scanIntent);
+                    }
+
+                    if (deleteInputFile) {
+                        inFile.delete();
                     }
                     
                     callback.success(outputFilePath);
@@ -245,12 +244,12 @@ public class VideoEditor extends CordovaPlugin {
 
         @Override
         public void shellOut(String shellLine) {
-            Log.v(TAG, "shellOut: " + shellLine);
+            Log.d(TAG, "shellOut: " + shellLine);
         }
 
         @Override
         public void processComplete(int exitValue) {
-            Log.v(TAG, "processComplete: " + exitValue);
+            Log.d(TAG, "processComplete: " + exitValue);
         }
         
     }

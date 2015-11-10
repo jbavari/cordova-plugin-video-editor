@@ -29,7 +29,8 @@ VideoEditor.transcodeVideo(
         outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
         optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
         duration: 20, // optional, specify duration in seconds from start of video
-        saveToLibrary: true // optional, defaults to true
+        saveToLibrary: true, // optional, defaults to true
+        deleteInputFile: false // optional (android only), defaults to false
     }
 )
 ```
