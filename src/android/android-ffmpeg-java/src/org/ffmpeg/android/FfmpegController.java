@@ -235,16 +235,16 @@ public class FfmpegController {
 			cmd.add(in.format);
 		}
 	
-		if (in.videoCodec != null)
-		{
-			cmd.add(Argument.VIDEOCODEC);
-			cmd.add(in.videoCodec);
-			
-			if (in.videoCodec == "libx264") {
-                cmd.add("-preset");
-                cmd.add("ultrafast"); // needed b/c libx264 doesn't utilize all CPU cores
-			}
-		}
+    if (in.videoCodec != null)
+    {
+    	cmd.add(Argument.VIDEOCODEC);
+    	cmd.add(in.videoCodec);
+    	
+    	if (in.videoCodec == "libx264") {
+        cmd.add("-preset");
+        cmd.add("ultrafast"); // needed b/c libx264 doesn't utilize all CPU cores
+    	}
+    }
 		
 		if (in.audioCodec != null)
 		{
@@ -320,6 +320,12 @@ public class FfmpegController {
 			cmd.add("-f");
 			cmd.add(out.format);
 		}
+
+  	if (out.duration > 0)
+  	{
+  		cmd.add(Argument.DURATION);
+  		cmd.add(out.duration);
+  	}
 		
 		if (enableExperimental)
 		{
