@@ -14,13 +14,28 @@
 
 @implementation VideoEditor
 
-/*  transcodeVideo arguments:
- fileUri: video input url
- outputFileName: output file name
- quality: transcode quality
- outputFileType: output file type
- optimizeForNetworkUse: optimize for network use
- saveToLibrary: bool - save to photo album
+/**
+ * transcodeVideo
+ *
+ * Transcodes a video
+ *
+ * ARGUMENTS
+ * =========
+ *
+ * fileUri:         - path to input video
+ * outputFileName:  - output file name
+ * quality:         - transcode quality
+ * outputFileType:  - output file type
+ * saveToLibrary:   - save to gallery
+ * deleteInputFile: - optionally remove input file
+ *
+ * RESPONSE
+ * ========
+ *
+ * outputFilePath - path to output file
+ *
+ * @param CDVInvokedUrlCommand command
+ * @return void
  */
 - (void) transcodeVideo:(CDVInvokedUrlCommand*)command
 {
@@ -145,6 +160,24 @@
 
 }
 
+/**
+ * createThumbnail
+ *
+ * Creates a thumbnail from the start of a video.
+ *
+ * ARGUMENTS
+ * =========
+ * fileUri        - input file path
+ * outputFileName - output file name
+ *
+ * RESPONSE
+ * ========
+ *
+ * outputFilePath - path to output file
+ *
+ * @param CDVInvokedUrlCommand command
+ * @return void
+ */
 - (void) createThumbnail:(CDVInvokedUrlCommand*)command
 {
     NSDictionary* options = [command.arguments objectAtIndex:0];
@@ -162,6 +195,99 @@
     {
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:outputFilePath] callbackId:command.callbackId];
     }
+}
+
+/**
+ * trim
+ *
+ * Performs a trim operation on a clip, while encoding it.
+ *
+ * ARGUMENTS
+ * =========
+ * fileUri        - input file path
+ * trimStart      - time to start trimming
+ * trimEnd        - time to end trimming
+ * outputFileName - output file name
+ *
+ * RESPONSE
+ * ========
+ *
+ * outputFilePath - path to output file
+ *
+ * @param CDVInvokedUrlCommand command
+ * @return void
+ */
+- (void) trim:(CDVInvokedUrlCommand*)command {
+    NSLog(@"[Trim]: trim called");
+    
+    // extract arguments
+    NSDictionary* options = [command.arguments objectAtIndex:0];
+    if ([options isKindOfClass:[NSNull class]]) {
+        options = [NSDictionary dictionary];
+    }
+    NSString *inputFile = [options objectForKey:@"fileUri"];
+    float trimStart = [[options objectForKey:@"trimStart"] floatValue];
+    float trimEnd = [[options objectForKey:@"trimEnd"] floatValue];
+    NSString *outputName = [options objectForKey:@"outputFileName"];
+    
+    // remove file:// from the inputFile path if it is there
+    inputFile = [[inputFile stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
+    
+    NSFileManager *fileMgr = [NSFileManager defaultManager];
+    NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    
+    // videoDir
+    NSString *videoDir = [cacheDir stringByAppendingPathComponent:@"mp4"];
+    if ([fileMgr createDirectoryAtPath:videoDir withIntermediateDirectories:YES attributes:nil error: NULL] == NO){
+        [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"failed to create video dir"] callbackId:command.callbackId];
+        return;
+    }
+    NSString *videoOutput = [videoDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"mp4"]];
+    
+    NSLog(@"[Trim]: inputFile path: %@", inputFile);
+    NSLog(@"[Trim]: outputPath: %@", videoOutput);
+    
+    // run in background
+    [self.commandDelegate runInBackground:^{
+        
+        AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:inputFile] options:nil];
+        
+        AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]initWithAsset:avAsset presetName: AVAssetExportPresetHighestQuality];
+        exportSession.outputURL = [NSURL fileURLWithPath:videoOutput];
+        exportSession.outputFileType = AVFileTypeQuickTimeMovie;
+        exportSession.shouldOptimizeForNetworkUse = NO;
+        
+        int32_t preferredTimeScale = 600;
+        CMTime startTime = CMTimeMakeWithSeconds(trimStart, preferredTimeScale);
+        CMTime stopTime = CMTimeMakeWithSeconds(trimEnd, preferredTimeScale);
+        CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
+        exportSession.timeRange = exportTimeRange;
+        
+        // debug timings
+        NSString *trimStart = (NSString *) CFBridgingRelease(CMTimeCopyDescription(NULL, startTime));
+        NSString *trimEnd = (NSString *) CFBridgingRelease(CMTimeCopyDescription(NULL, stopTime));
+        NSLog(@"[Trim]: duration: %lld, trimStart: %@, trimEnd: %@", avAsset.duration.value, trimStart, trimEnd);
+        
+        [exportSession exportAsynchronouslyWithCompletionHandler:^{
+            switch ([exportSession status]) {
+                case AVAssetExportSessionStatusCompleted:
+                    NSLog(@"[Trim]: Export Complete %d %@", exportSession.status, exportSession.error);
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoOutput] callbackId:command.callbackId];
+                    break;
+                case AVAssetExportSessionStatusFailed:
+                    NSLog(@"[Trim]: Export failed: %@", [[exportSession error] localizedDescription]);
+                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
+                    break;
+                case AVAssetExportSessionStatusCancelled:
+                    NSLog(@"[Trim]: Export canceled");
+                    break;
+                default:
+                    NSLog(@"[Trim]: Export default in switch");
+                    break;
+            }
+        }];
+        
+    }];
 }
 
 NSString* extractVideoThumbnail(NSString *srcVideoPath, NSString *outputFileName)
