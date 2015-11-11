@@ -1,0 +1,36 @@
+{
+  "name": "cordova-plugin-video-editor",
+  "version": "1.0.0",
+  "description": "Cordova Video Editor Plugin",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "cordova": {
+    "id": "cordova-plugin-video-editor",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "keywords": [
+    "cordova",
+    "video",
+    "editing",
+    "editor",
+    "cordova",
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jbavari/cordova-plugin-video-editor.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jbavari/cordova-plugin-video-editor/issues"
+  },
+  "homepage": "https://github.com/jbavari/cordova-plugin-video-editor#readme"
+}
