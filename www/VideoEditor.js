@@ -15,6 +15,10 @@ VideoEditor.prototype.transcodeVideo = function(success, error, options) {
     exec(success, error, pluginName, 'transcodeVideo', [options]);
 };
 
+VideoEditor.prototype.trim = function(success, error, options) {
+    exec(success, error, pluginName, 'trim', [options]);
+};
+
 VideoEditor.prototype.createThumbnail = function(success, error, options) {
     exec(success, error, pluginName, 'createThumbnail', [options]);
 };
