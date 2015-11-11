@@ -1,3 +1,5 @@
+[![npm version](https://badge.fury.io/js/cordova-plugin-video-editor.svg)](https://badge.fury.io/js/cordova-plugin-video-editor)
+
 This is a cordova plugin to assist in several video editing tasks such as:
 
 * Transcoding
@@ -10,7 +12,7 @@ This plugin will address those concerns, hopefully.
 
 ## Installation
 ```
-cordova plugin add https://github.com/jbavari/cordova-plugin-video-editor.git
+cordova plugin add cordova-plugin-video-editor
 ```
 `VideoEditor` and `VideoEditorOptions` will be available in the window after deviceready.
 
