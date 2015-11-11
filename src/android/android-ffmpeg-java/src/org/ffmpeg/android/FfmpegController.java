@@ -95,7 +95,7 @@ public class FfmpegController {
 
 	
 	
-	private void execFFMPEG (List<String> cmd, ShellCallback sc, File fileExec) throws IOException, InterruptedException {
+	public void execFFMPEG (List<String> cmd, ShellCallback sc, File fileExec) throws IOException, InterruptedException {
 	
 		enablePermissions();
 		
@@ -107,8 +107,8 @@ public class FfmpegController {
 		Runtime.getRuntime().exec("chmod 700 " + mFfmpegBin);
     	
 	}
-	
-	private void execFFMPEG (List<String> cmd, ShellCallback sc) throws IOException, InterruptedException {
+
+	public void execFFMPEG (List<String> cmd, ShellCallback sc) throws IOException, InterruptedException {
 		execFFMPEG (cmd, sc, new File(mFfmpegBin).getParentFile());
 	}
 	
