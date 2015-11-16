@@ -23,4 +23,8 @@ VideoEditor.prototype.createThumbnail = function(success, error, options) {
     exec(success, error, pluginName, 'createThumbnail', [options]);
 };
 
+VideoEditor.prototype.execFFMPEG = function(success, error, options) {
+    exec(success, error, pluginName, 'execFFMPEG', [options]);
+};
+
 module.exports = new VideoEditor();
