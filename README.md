@@ -18,7 +18,7 @@ cordova plugin add cordova-plugin-video-editor
 
 ## Usage
 
-###Transcode###
+### Transcode
 ```javascript
 // parameters passed to transcodeVideo
 VideoEditor.transcodeVideo(
@@ -68,12 +68,13 @@ navigator.device.capture.captureVideo(
 );
 
 function videoCaptureSuccess(mediaFiles) {
+    // Wrap this below in a ~100 ms timeout on Android if
+    // you just recorded the video using the capture plugin.
+    // For some reason it is not available immediately in the file system.
+
     var file = mediaFiles[0];
     var videoFileName = 'video-name-here'; // I suggest a uuid
 
-    // Wrap this call in a ~100 ms timeout on Android if
-    // you just recorded the video using the capture plugin.
-    // For some reason it is not available immediately in the file system.
     VideoEditor.transcodeVideo(
         videoTranscodeSuccess,
         videoTranscodeError,
@@ -98,7 +99,7 @@ function videoTranscodeError(err) {
 }
 ```
 
-###Trim a Video###
+### Trim a Video
 ```javascript
 VideoEditor.trim(
     trimSuccess, 
@@ -121,7 +122,7 @@ function trimFail(err) {
 }
 ```
 
-###Create JPEG Image From Video###
+### Create JPEG Image From Video
 ```javascript
 VideoEditor.createThumbnail(
     success, // success cb
@@ -145,12 +146,13 @@ navigator.device.capture.captureVideo(
 );
 
 function videoCaptureSuccess(mediaFiles) {
+    // Wrap this below in a ~100 ms timeout on Android if
+    // you just recorded the video using the capture plugin.
+    // For some reason it is not available immediately in the file system.
+
     var file = mediaFiles[0];
     var videoFileName = 'video-name-here'; // I suggest a uuid
 
-    // Wrap this call in a ~100 ms timeout on Android if
-    // you just recorded the video using the capture plugin.
-    // For some reason it is not available immediately in the file system.
     VideoEditor.createThumbnail(
         createThumbnailSuccess,
         createThumbnailError,
@@ -164,6 +166,96 @@ function videoCaptureSuccess(mediaFiles) {
 function createThumbnailSuccess(result) {
     // result is the path to the jpeg image on the device
     console.log('createThumbnailSuccess, result: ' + result);
+}
+```
+
+### Execute an FFMPEG command (Android only)
+[FFMPEG documentation](https://ffmpeg.org/ffmpeg.html)
+```javascript
+VideoEditor.execFFMPEG(
+    success, // success cb
+    error, // error cb
+    {
+        cmd: 'ffmpeg string command here (anything valid goes)'
+    }
+);
+```
+```javascript
+// this example uses the cordova media capture plugin to get the input file path
+navigator.device.capture.captureVideo(
+    videoCaptureSuccess, 
+    videoCaptureError, 
+    { 
+        limit: 1, 
+        duration: 20 
+    }
+);
+
+function videoCaptureSuccess(mediaFiles) {
+    // Wrap this below in a ~100 ms timeout to ensure the recorded file is available
+
+    var outputPath = cordova.file.externalRootDirectory;
+    var outputFileName = 'test.mp4';
+
+    createOutputFile(outputPath, outputFileName, function(fileEntry) {
+        if (!fileEntry) {
+            console.log('error creating file');
+            return;
+        }
+
+        // the file paths need to be absolute without file:// (ex. "/storage/sdcard0/test.mp4")
+        var inputFilePath = mediaFiles[0].fullPath.replace('file:', '');
+        var outputFilePath = fileEntry.toURL().replace('file://', '');
+
+        // this ffmpeg command gives an output file with 512kbps bit rate, 640x640 res @ 24 fps, using the h.264 codec (-stict -2 enables expirmental codecs)
+        // you can pass multiple input/output files... use ffmpeg however you want
+        var cmd = ['-y', '-i', inputFilePath, '-b:v', '512k', '-s', '640x640', '-r', '24', '-vcodec', 'libx264', '-strict', '-2', outputFilePath];
+
+        VideoEditor.execFFMPEG(
+            ffmpegSuccess,
+            ffmpegError,
+            {
+                cmd: cmd
+            }
+        );
+
+    });
+}
+
+function ffmpegSuccess() {
+    console.log('execFFMPEG success');
+}
+
+function ffmpegError(err) {
+    console.log('ffmpegError, err: ' + err);
+}
+
+// this helper function I made creates a file at a provided path using the cordova-file plugin
+// you can pass cordova.file.cacheDirectory, cordova.file.externalRootDirectory, etc.
+function createOutputFile(path, fileName, cb) {
+    window.requestFileSystem(window.PERSISTENT, 5*1024*1024, 
+        function(fs) {
+            window.resolveLocalFileSystemURL(path,
+                function(dirEntry) {
+                    dirEntry.getFile(fileName, { create: true, exclusive: false }, function(fileEntry) {
+                        console.log('successfully created file');
+                        return cb(fileEntry);
+                    }, function(err) {
+                        console.log('error creating file, err: ' + err);
+                        return cb(null);
+                    });
+                },
+                function(err) {
+                    console.log('error finding specified path, err: ' + err);
+                    return cb(null);
+                }
+            );
+        },
+        function(err) {
+            console.log('error accessing file system, err: ' + err);
+            return cb(null);
+        }
+    );
 }
 ```
 
