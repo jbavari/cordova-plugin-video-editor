@@ -176,7 +176,7 @@ VideoEditor.execFFMPEG(
     success, // success cb
     error, // error cb
     {
-        cmd: 'ffmpeg string command here (anything valid goes)'
+        cmd: ['-pass', 'an', '-array', 'of', '-ffmpeg', 'command' '-strings', 'here'] // see example below
     }
 );
 ```
