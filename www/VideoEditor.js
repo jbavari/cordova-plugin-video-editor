@@ -5,26 +5,55 @@
 //  Modified by Ross Martin on 01-29-15
 //
 
-var exec = require('cordova/exec'),
-    pluginName = 'VideoEditor';
+var exec = require('cordova/exec');
+var pluginName = 'VideoEditor';
 
-function VideoEditor() {
-}
+function VideoEditor() {}
 
 VideoEditor.prototype.transcodeVideo = function(success, error, options) {
-    exec(success, error, pluginName, 'transcodeVideo', [options]);
+  var self = this;
+  var win = function(result) {
+    if (typeof result.shellOut !== 'undefined') {
+      if (typeof options.progress === 'function') {
+        options.progress(result.shellOut);
+      }
+    } else {
+      success(result);
+    }
+  };
+  exec(win, error, pluginName, 'transcodeVideo', [options]);
 };
 
 VideoEditor.prototype.trim = function(success, error, options) {
-    exec(success, error, pluginName, 'trim', [options]);
+  var self = this;
+  var win = function(result) {
+    if (typeof result.shellOut !== 'undefined') {
+      if (typeof options.progress === 'function') {
+        options.progress(result.shellOut);
+      }
+    } else {
+      success(result);
+    }
+  };
+  exec(win, error, pluginName, 'trim', [options]);
 };
 
 VideoEditor.prototype.createThumbnail = function(success, error, options) {
-    exec(success, error, pluginName, 'createThumbnail', [options]);
+  exec(success, error, pluginName, 'createThumbnail', [options]);
 };
 
 VideoEditor.prototype.execFFMPEG = function(success, error, options) {
-    exec(success, error, pluginName, 'execFFMPEG', [options]);
+  var self = this;
+  var win = function(result) {
+    if (typeof result.shellOut !== 'undefined') {
+      if (typeof options.progress === 'function') {
+        options.progress(result.shellOut);
+      }
+    } else {
+      success(result);
+    }
+  };
+  exec(win, error, pluginName, 'execFFMPEG', [options]);
 };
 
 module.exports = new VideoEditor();

@@ -13,6 +13,8 @@ import java.util.ArrayList;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
+import org.apache.cordova.PluginResult;
+import org.ffmpeg.android.ShellUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -224,8 +226,6 @@ public class VideoEditor extends CordovaPlugin {
                     File tempFile = File.createTempFile("ffmpeg", null, appContext.getCacheDir());
                     FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
 
-                    TranscodeCallback tcCallback = new TranscodeCallback();
-
                     Clip clipIn = new Clip(videoSrcPath);
 
                     Clip clipOut = new Clip(outputFilePath);
@@ -237,7 +237,23 @@ public class VideoEditor extends CordovaPlugin {
                     clipOut.height = outputHeight;
                     clipOut.duration = videoDuration;
 
-                    ffmpegController.processVideo(clipIn, clipOut, true, tcCallback);
+                    ffmpegController.processVideo(clipIn, clipOut, true, new ShellUtils.ShellCallback() {
+                        @Override
+                        public void shellOut(String shellLine) {
+                            Log.d(TAG, "shellOut: " + shellLine);
+                            try {
+                                JSONObject jsonObj = new JSONObject();
+                                jsonObj.put("shellOut", shellLine.toString());
+                                PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
+                                progressResult.setKeepCallback(true);
+                                callback.sendPluginResult(progressResult);
+                            } catch (JSONException e) {
+                                Log.d(TAG, "PluginResult error: " + e);
+                            }
+                        }
+                        @Override
+                        public void processComplete(int exitValue) {}
+                    });
 
                     Log.d(TAG, "ffmpeg finished");
 
@@ -341,8 +357,6 @@ public class VideoEditor extends CordovaPlugin {
                 try {
                     FfmpegController ffmpegController = new FfmpegController(appContext, tempDir);
 
-                    TranscodeCallback sc = new TranscodeCallback();
-
                     // ffmpeg -ss [start1] -i [INPUT] -ss [start2] -t [duration] -c copy [OUTPUT]
                     ArrayList<String> cmd = new ArrayList<String>();
                     cmd.add(ffmpegController.getBinaryPath());
@@ -360,7 +374,23 @@ public class VideoEditor extends CordovaPlugin {
                     cmd.add("copy");
 
                     cmd.add(outputFilePath);
-                    ffmpegController.execFFMPEG(cmd, sc);
+                    ffmpegController.execFFMPEG(cmd, new ShellUtils.ShellCallback() {
+                        @Override
+                        public void shellOut(String shellLine) {
+                            Log.d(TAG, "shellOut: " + shellLine);
+                            try {
+                                JSONObject jsonObj = new JSONObject();
+                                jsonObj.put("shellOut", shellLine.toString());
+                                PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
+                                progressResult.setKeepCallback(true);
+                                callback.sendPluginResult(progressResult);
+                            } catch (JSONException e) {
+                                Log.d(TAG, "PluginResult error: " + e);
+                            }
+                        }
+                        @Override
+                        public void processComplete(int exitValue) {}
+                    });
 
                     Log.d(TAG, "ffmpeg finished");
                     if (!outputFile.exists()) {
@@ -500,8 +530,6 @@ public class VideoEditor extends CordovaPlugin {
                     File tempFile = File.createTempFile("ffmpeg", null, appContext.getCacheDir());
                     FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
 
-                    TranscodeCallback sc = new TranscodeCallback();
-
                     ArrayList<String> al = new ArrayList<String>();
                     al.add(ffmpegController.getBinaryPath());
 
@@ -510,7 +538,23 @@ public class VideoEditor extends CordovaPlugin {
                         al.add(cmds.optString(i));
                     }
 
-                    ffmpegController.execFFMPEG(al, sc);
+                    ffmpegController.execFFMPEG(al, new ShellUtils.ShellCallback() {
+                        @Override
+                        public void shellOut(String shellLine) {
+                            Log.d(TAG, "shellOut: " + shellLine);
+                            try {
+                                JSONObject jsonObj = new JSONObject();
+                                jsonObj.put("shellOut", shellLine.toString());
+                                PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
+                                progressResult.setKeepCallback(true);
+                                callback.sendPluginResult(progressResult);
+                            } catch (JSONException e) {
+                                Log.d(TAG, "PluginResult error: " + e);
+                            }
+                        }
+                        @Override
+                        public void processComplete(int exitValue) {}
+                    });
                     Log.d(TAG, "ffmpeg finished");
 
                     callback.success();
