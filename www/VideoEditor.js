@@ -13,9 +13,9 @@ function VideoEditor() {}
 VideoEditor.prototype.transcodeVideo = function(success, error, options) {
   var self = this;
   var win = function(result) {
-    if (typeof result.shellOut !== 'undefined') {
+    if (typeof result.progress !== 'undefined') {
       if (typeof options.progress === 'function') {
-        options.progress(result.shellOut);
+        options.progress(result.progress);
       }
     } else {
       success(result);
@@ -27,9 +27,9 @@ VideoEditor.prototype.transcodeVideo = function(success, error, options) {
 VideoEditor.prototype.trim = function(success, error, options) {
   var self = this;
   var win = function(result) {
-    if (typeof result.shellOut !== 'undefined') {
+    if (typeof result.progress !== 'undefined') {
       if (typeof options.progress === 'function') {
-        options.progress(result.shellOut);
+        options.progress(result.progress);
       }
     } else {
       success(result);
@@ -45,9 +45,9 @@ VideoEditor.prototype.createThumbnail = function(success, error, options) {
 VideoEditor.prototype.execFFMPEG = function(success, error, options) {
   var self = this;
   var win = function(result) {
-    if (typeof result.shellOut !== 'undefined') {
+    if (typeof result.progress !== 'undefined') {
       if (typeof options.progress === 'function') {
-        options.progress(result.shellOut);
+        options.progress(result.progress);
       }
     } else {
       success(result);

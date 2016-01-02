@@ -243,7 +243,7 @@ public class VideoEditor extends CordovaPlugin {
                             Log.d(TAG, "shellOut: " + shellLine);
                             try {
                                 JSONObject jsonObj = new JSONObject();
-                                jsonObj.put("shellOut", shellLine.toString());
+                                jsonObj.put("progress", shellLine.toString());
                                 PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
                                 progressResult.setKeepCallback(true);
                                 callback.sendPluginResult(progressResult);
@@ -380,7 +380,7 @@ public class VideoEditor extends CordovaPlugin {
                             Log.d(TAG, "shellOut: " + shellLine);
                             try {
                                 JSONObject jsonObj = new JSONObject();
-                                jsonObj.put("shellOut", shellLine.toString());
+                                jsonObj.put("progress", shellLine.toString());
                                 PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
                                 progressResult.setKeepCallback(true);
                                 callback.sendPluginResult(progressResult);
@@ -544,7 +544,7 @@ public class VideoEditor extends CordovaPlugin {
                             Log.d(TAG, "shellOut: " + shellLine);
                             try {
                                 JSONObject jsonObj = new JSONObject();
-                                jsonObj.put("shellOut", shellLine.toString());
+                                jsonObj.put("progress", shellLine.toString());
                                 PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
                                 progressResult.setKeepCallback(true);
                                 callback.sendPluginResult(progressResult);
