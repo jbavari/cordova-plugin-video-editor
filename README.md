@@ -32,7 +32,8 @@ VideoEditor.transcodeVideo(
         optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
         duration: 20, // optional, specify duration in seconds from start of video
         saveToLibrary: true, // optional, defaults to true
-        deleteInputFile: false // optional (android only), defaults to false
+        deleteInputFile: false, // optional (android only), defaults to false
+        progress: function(info) {} // optional (android only), see docs on progress
     }
 )
 ```
@@ -215,7 +216,8 @@ function videoCaptureSuccess(mediaFiles) {
             ffmpegSuccess,
             ffmpegError,
             {
-                cmd: cmd
+                cmd: cmd,
+                progress: function(info) {} // optional, see docs on progress
             }
         );
 
@@ -256,6 +258,71 @@ function createOutputFile(path, fileName, cb) {
             return cb(null);
         }
     );
+}
+```
+
+### How to use the progress callback function (currently android only)
+```
+// make a duration variable to be updated on each progress function call
+// you could use a dynamic variable name if you are doing multiple VideoEditor tasks simultaneously
+var duration = 0;
+
+// for android this arithmetic below can be used to track the progress 
+// of ffmpeg by using info provided by the android-ffmpeg-java shell output
+// this is a modified version of http://stackoverflow.com/a/17314632/1673842
+
+VideoEditor.transcodeVideo(
+    success, // success cb
+    error, // error cb
+    {
+        ....
+        progress: onVideoEditorProgress
+    }
+)
+
+function onVideoEditorProgress(info) {
+    // get duration of source
+    if (!duration) {
+        var matches = (info) ? info.match(/Duration: (.*?), start:/) : [];
+        if (matches && matches.length > 0) {
+            var rawDuration = matches[1];
+            // convert rawDuration from 00:00:00.00 to seconds.
+            var ar = rawDuration.split(":").reverse();
+            duration = parseFloat(ar[0]);
+            if (ar[1]) duration += parseInt(ar[1]) * 60;
+            if (ar[2]) duration += parseInt(ar[2]) * 60 * 60;  
+        }
+        return;
+    }
+
+    // get the time 
+    var matches = info.match(/time=(.*?) bitrate/g);
+
+    if (matches && matches.length > 0) {
+        var time = 0;
+        var progress = 0;
+        var rawTime = matches.pop();
+        rawTime = rawTime.replace('time=', '').replace(' bitrate', '');
+
+        // convert rawTime from 00:00:00.00 to seconds.
+        ar = rawTime.split(":").reverse();
+        time = parseFloat(ar[0]);
+        if (ar[1]) time += parseInt(ar[1]) * 60;
+        if (ar[2]) time += parseInt(ar[2]) * 60 * 60;
+
+        //calculate the progress
+        progress = Math.round((time / duration) * 100);
+
+        var progressObj = {
+            duration: duration,
+            current: time,
+            progress: progress
+        };
+
+        console.log('progressObj: ' + JSON.stringify(progressObj, null, 2));
+
+        /* update your progress indicator here with above values ... */
+    }
 }
 ```
 
