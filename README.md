@@ -305,7 +305,7 @@ function onVideoEditorProgress(info) {
         rawTime = rawTime.replace('time=', '').replace(' bitrate', '');
 
         // convert rawTime from 00:00:00.00 to seconds.
-        ar = rawTime.split(":").reverse();
+        var ar = rawTime.split(":").reverse();
         time = parseFloat(ar[0]);
         if (ar[1]) time += parseInt(ar[1]) * 60;
         if (ar[2]) time += parseInt(ar[2]) * 60 * 60;
