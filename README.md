@@ -262,7 +262,7 @@ function createOutputFile(path, fileName, cb) {
 ```
 
 ### How to use the progress callback function (currently android only)
-```
+```javascript
 // make a duration variable to be updated on each progress function call
 // you could use a dynamic variable name if you are doing multiple VideoEditor tasks simultaneously
 var duration = 0;
