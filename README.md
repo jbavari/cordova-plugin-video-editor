@@ -33,7 +33,7 @@ VideoEditor.transcodeVideo(
         duration: 20, // optional, specify duration in seconds from start of video
         saveToLibrary: true, // optional, defaults to true
         deleteInputFile: false, // optional (android only), defaults to false
-        progress: function(info) {} // optional (android only), see docs on progress
+        progress: function(info) {} // optional, see docs on progress
     }
 )
 ```
@@ -109,7 +109,8 @@ VideoEditor.trim(
         fileUri: 'file-uri-here', // path to input video
         trimStart: 5, // time to start trimming in seconds
         trimEnd: 15, // time to end trimming in seconds
-        outputFileName: 'output-name' // output file name
+        outputFileName: 'output-name', // output file name
+        progress: function(info) {} // optional, see docs on progress
     }
 );
 
@@ -261,16 +262,8 @@ function createOutputFile(path, fileName, cb) {
 }
 ```
 
-### How to use the progress callback function (currently android only)
+### How to use the progress callback function
 ```javascript
-// make a duration variable to be updated on each progress function call
-// you could use a dynamic variable name if you are doing multiple VideoEditor tasks simultaneously
-var duration = 0;
-
-// for android this arithmetic below can be used to track the progress 
-// of ffmpeg by using info provided by the android-ffmpeg-java shell output
-// this is a modified version of http://stackoverflow.com/a/17314632/1673842
-
 VideoEditor.transcodeVideo(
     success, // success cb
     error, // error cb
@@ -280,7 +273,23 @@ VideoEditor.transcodeVideo(
     }
 )
 
+// for android make a duration variable to be updated on each progress function call
+// you could use a dynamic variable name if you are doing multiple VideoEditor tasks simultaneously
+var duration = 0;
+
 function onVideoEditorProgress(info) {
+    // info on android will be shell output from android-ffmpeg-java
+    // info on ios will be a number from 0 to 100
+
+    if (device.platform.toLowerCase() === 'ios') {
+        // use info to update your progress indicator
+        return; // the code below is for android
+    }
+
+    // for android this arithmetic below can be used to track the progress 
+    // of ffmpeg by using info provided by the android-ffmpeg-java shell output
+    // this is a modified version of http://stackoverflow.com/a/17314632/1673842
+
     // get duration of source
     if (!duration) {
         var matches = (info) ? info.match(/Duration: (.*?), start:/) : [];
