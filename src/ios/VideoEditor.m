@@ -27,7 +27,7 @@
  * quality:         - transcode quality
  * outputFileType:  - output file type
  * saveToLibrary:   - save to gallery
- * deleteInputFile: - optionally remove input file
+ * progress:        - optional callback function that receives progress info
  *
  * RESPONSE
  * ========
@@ -106,16 +106,15 @@
         return;
     }
     
-    NSString *docDir = [NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-    NSString *tempVideoPath =[NSString stringWithFormat:@"%@/%@%@", docDir, videoFileName, @".mov"];
+    NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
+    NSString *tempVideoPath =[NSString stringWithFormat:@"%@/%@%@", cacheDir, videoFileName, @".mov"];
     NSData *videoData = [NSData dataWithContentsOfFile:assetPath];
     [videoData writeToFile:tempVideoPath atomically:NO];
 
     AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:tempVideoPath] options:nil];
-    NSArray *compatiblePresets = [AVAssetExportSession exportPresetsCompatibleWithAsset:avAsset];
     
-    if ([compatiblePresets containsObject:AVAssetExportPresetLowQuality])
-    {
+    // run in background
+    [self.commandDelegate runInBackground:^{
         AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]initWithAsset:avAsset presetName: presetName];
         NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
         NSString *videoPath = [NSString stringWithFormat:@"%@/%@%@", [paths objectAtIndex:0], videoFileName, outputExtension];
@@ -134,30 +133,69 @@
             CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
             exportSession.timeRange = exportTimeRange;
         }
+        
+        //  Set up a semaphore for the completion handler and progress timer
+        dispatch_semaphore_t sessionWaitSemaphore = dispatch_semaphore_create(0);
+        
+        void (^completionHandler)(void) = ^(void)
+        {
+            dispatch_semaphore_signal(sessionWaitSemaphore);
+        };
+        
+        // do it
+        [exportSession exportAsynchronouslyWithCompletionHandler:completionHandler];
+        
+        do {
+            dispatch_time_t dispatchTime = DISPATCH_TIME_FOREVER;  // if we dont want progress, we will wait until it finishes.
+            dispatchTime = getDispatchTimeFromSeconds((float)1.0);
+            double progress = [exportSession progress] * 100;
+            
+            NSLog([NSString stringWithFormat:@"AVAssetExport running progress=%3.2f%%", progress]);
+            
+            NSMutableDictionary *dictionary = [[NSMutableDictionary alloc] init];
+            [dictionary setValue: [NSNumber numberWithDouble: progress] forKey: @"progress"];
+            
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary: dictionary];
+            
+            [result setKeepCallbackAsBool:YES];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            dispatch_semaphore_wait(sessionWaitSemaphore, dispatchTime);
+        } while( [exportSession status] < AVAssetExportSessionStatusCompleted );
+        
+        // this is kinda odd but must be done
+        if ([exportSession status] == AVAssetExportSessionStatusCompleted) {
+            NSMutableDictionary *dictionary = [[NSMutableDictionary alloc] init];
+            // AVAssetExportSessionStatusCompleted will not always mean progress is 100 so hard code it below
+            double progress = 100.00;
+            [dictionary setValue: [NSNumber numberWithDouble: progress] forKey: @"progress"];
+            
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary: dictionary];
+            
+            [result setKeepCallbackAsBool:YES];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        }
+        
+        switch ([exportSession status]) {
+            case AVAssetExportSessionStatusCompleted:
+                if (saveToPhotoAlbum) {
+                    UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
+                }
+                NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoPath] callbackId:command.callbackId];
+                break;
+            case AVAssetExportSessionStatusFailed:
+                NSLog(@"Export failed: %@", [[exportSession error] localizedDescription]);
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
+                break;
+            case AVAssetExportSessionStatusCancelled:
+                NSLog(@"Export canceled");
+                break;
+            default:
+                NSLog(@"Export default in switch");
+                break;
+        }
 
-        [exportSession exportAsynchronouslyWithCompletionHandler:^{
-            switch ([exportSession status]) {
-                case AVAssetExportSessionStatusCompleted:
-                    if (saveToPhotoAlbum) {
-                        UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
-                    }
-                    NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoPath] callbackId:command.callbackId];
-                    break;
-                case AVAssetExportSessionStatusFailed:
-                    NSLog(@"Export failed: %@", [[exportSession error] localizedDescription]);
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
-                    break;
-                case AVAssetExportSessionStatusCancelled:
-                    NSLog(@"Export canceled");
-                    break;
-                default:
-                    NSLog(@"Export default in switch");
-                    break;
-            }
-        }];
-    }
-
+    }];
 }
 
 /**
@@ -208,6 +246,7 @@
  * trimStart      - time to start trimming
  * trimEnd        - time to end trimming
  * outputFileName - output file name
+ * progress:      - optional callback function that receives progress info
  *
  * RESPONSE
  * ========
@@ -268,24 +307,63 @@
         NSString *trimEnd = (NSString *) CFBridgingRelease(CMTimeCopyDescription(NULL, stopTime));
         NSLog(@"[Trim]: duration: %lld, trimStart: %@, trimEnd: %@", avAsset.duration.value, trimStart, trimEnd);
         
-        [exportSession exportAsynchronouslyWithCompletionHandler:^{
-            switch ([exportSession status]) {
-                case AVAssetExportSessionStatusCompleted:
-                    NSLog(@"[Trim]: Export Complete %d %@", exportSession.status, exportSession.error);
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoOutput] callbackId:command.callbackId];
-                    break;
-                case AVAssetExportSessionStatusFailed:
-                    NSLog(@"[Trim]: Export failed: %@", [[exportSession error] localizedDescription]);
-                    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
-                    break;
-                case AVAssetExportSessionStatusCancelled:
-                    NSLog(@"[Trim]: Export canceled");
-                    break;
-                default:
-                    NSLog(@"[Trim]: Export default in switch");
-                    break;
-            }
-        }];
+        //  Set up a semaphore for the completion handler and progress timer
+        dispatch_semaphore_t sessionWaitSemaphore = dispatch_semaphore_create(0);
+        
+        void (^completionHandler)(void) = ^(void)
+        {
+            dispatch_semaphore_signal(sessionWaitSemaphore);
+        };
+        
+        // do it
+        [exportSession exportAsynchronouslyWithCompletionHandler:completionHandler];
+        
+        do {
+            dispatch_time_t dispatchTime = DISPATCH_TIME_FOREVER;  // if we dont want progress, we will wait until it finishes.
+            dispatchTime = getDispatchTimeFromSeconds((float)1.0);
+            double progress = [exportSession progress] * 100;
+            
+            NSLog([NSString stringWithFormat:@"AVAssetExport running progress=%3.2f%%", progress]);
+            
+            NSMutableDictionary *dictionary = [[NSMutableDictionary alloc] init];
+            [dictionary setValue: [NSNumber numberWithDouble: progress] forKey: @"progress"];
+            
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary: dictionary];
+            
+            [result setKeepCallbackAsBool:YES];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+            dispatch_semaphore_wait(sessionWaitSemaphore, dispatchTime);
+        } while( [exportSession status] < AVAssetExportSessionStatusCompleted );
+        
+        // this is kinda odd but must be done
+        if ([exportSession status] == AVAssetExportSessionStatusCompleted) {
+            NSMutableDictionary *dictionary = [[NSMutableDictionary alloc] init];
+            // AVAssetExportSessionStatusCompleted will not always mean progress is 100 so hard code it below
+            double progress = 100.00;
+            [dictionary setValue: [NSNumber numberWithDouble: progress] forKey: @"progress"];
+            
+            CDVPluginResult* result = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary: dictionary];
+            
+            [result setKeepCallbackAsBool:YES];
+            [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
+        }
+        
+        switch ([exportSession status]) {
+            case AVAssetExportSessionStatusCompleted:
+                NSLog(@"[Trim]: Export Complete %d %@", exportSession.status, exportSession.error);
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoOutput] callbackId:command.callbackId];
+                break;
+            case AVAssetExportSessionStatusFailed:
+                NSLog(@"[Trim]: Export failed: %@", [[exportSession error] localizedDescription]);
+                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
+                break;
+            case AVAssetExportSessionStatusCancelled:
+                NSLog(@"[Trim]: Export canceled");
+                break;
+            default:
+                NSLog(@"[Trim]: Export default in switch");
+                break;
+        }
         
     }];
 }
@@ -337,6 +415,12 @@ NSString *documentsPathForFileName(NSString *name)
     NSString *documentsPath = [paths objectAtIndex:0];
     
     return [documentsPath stringByAppendingPathComponent:name];
+}
+
+static dispatch_time_t getDispatchTimeFromSeconds(float seconds) {
+    long long milliseconds = seconds * 1000.0;
+    dispatch_time_t waitTime = dispatch_time( DISPATCH_TIME_NOW, 1000000LL * milliseconds );
+    return waitTime;
 }
 
 @end
