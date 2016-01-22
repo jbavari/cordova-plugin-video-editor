@@ -64,11 +64,11 @@ var VideoEditorOptions = {
 ```javascript
 // this example uses the cordova media capture plugin
 navigator.device.capture.captureVideo(
-    videoCaptureSuccess, 
-    videoCaptureError, 
-    { 
-        limit: 1, 
-        duration: 20 
+    videoCaptureSuccess,
+    videoCaptureError,
+    {
+        limit: 1,
+        duration: 20
     }
 );
 
@@ -84,8 +84,8 @@ function videoCaptureSuccess(mediaFiles) {
         videoTranscodeSuccess,
         videoTranscodeError,
         {
-            fileUri: file.fullPath, 
-            outputFileName: videoFileName, 
+            fileUri: file.fullPath,
+            outputFileName: videoFileName,
             quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
             outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
             optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
@@ -107,8 +107,8 @@ function videoTranscodeError(err) {
 ### Trim a Video
 ```javascript
 VideoEditor.trim(
-    trimSuccess, 
-    trimFail, 
+    trimSuccess,
+    trimFail,
     {
         fileUri: 'file-uri-here', // path to input video
         trimStart: 5, // time to start trimming in seconds
@@ -143,11 +143,11 @@ VideoEditor.createThumbnail(
 ```javascript
 // this example uses the cordova media capture plugin
 navigator.device.capture.captureVideo(
-    videoCaptureSuccess, 
-    videoCaptureError, 
-    { 
-        limit: 1, 
-        duration: 20 
+    videoCaptureSuccess,
+    videoCaptureError,
+    {
+        limit: 1,
+        duration: 20
     }
 );
 
@@ -189,11 +189,11 @@ VideoEditor.execFFMPEG(
 ```javascript
 // this example uses the cordova media capture plugin to get the input file path
 navigator.device.capture.captureVideo(
-    videoCaptureSuccess, 
-    videoCaptureError, 
-    { 
-        limit: 1, 
-        duration: 20 
+    videoCaptureSuccess,
+    videoCaptureError,
+    {
+        limit: 1,
+        duration: 20
     }
 );
 
@@ -240,7 +240,7 @@ function ffmpegError(err) {
 // this helper function I made creates a file at a provided path using the cordova-file plugin
 // you can pass cordova.file.cacheDirectory, cordova.file.externalRootDirectory, etc.
 function createOutputFile(path, fileName, cb) {
-    window.requestFileSystem(window.PERSISTENT, 5*1024*1024, 
+    window.requestFileSystem(window.PERSISTENT, 5*1024*1024,
         function(fs) {
             window.resolveLocalFileSystemURL(path,
                 function(dirEntry) {
@@ -290,7 +290,7 @@ function onVideoEditorProgress(info) {
         return; // the code below is for android
     }
 
-    // for android this arithmetic below can be used to track the progress 
+    // for android this arithmetic below can be used to track the progress
     // of ffmpeg by using info provided by the android-ffmpeg-java shell output
     // this is a modified version of http://stackoverflow.com/a/17314632/1673842
 
@@ -308,7 +308,7 @@ function onVideoEditorProgress(info) {
         return;
     }
 
-    // get the time 
+    // get the time
     var matches = info.match(/time=(.*?) bitrate/g);
 
     if (matches && matches.length > 0) {
@@ -375,4 +375,4 @@ Android: GPL
 
 iOS: MIT
 
-Windows: N/A
+Windows: Apache 2.0
