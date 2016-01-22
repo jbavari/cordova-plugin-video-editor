@@ -46,4 +46,19 @@
         <framework src="AVFoundation.framework" />
         <framework src="MediaPlayer.framework" />
     </platform>
+
+    <!-- Windows 8 --> 
+    <platform name="windows8"> 
+        <js-module src="src/windows8/VideoEditorProxy.js" name="VideoEditorProxy"> 
+            <merges target="" /> 
+        </js-module> 
+    </platform> 
+
+    <!-- Windows --> 
+    <platform name="windows"> 
+        <js-module src="src/windows/VideoEditorProxy.js" name="VideoEditorProxy"> 
+            <merges target="" /> 
+        </js-module> 
+    </platform> 
+
 </plugin>
