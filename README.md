@@ -19,6 +19,10 @@ cordova plugin add cordova-plugin-video-editor
 ## Usage
 
 ### Transcode
+
+#### Windows Quirks
+Windows does not support any of the optional parameters at this time. Specifying them will not cause an error but, there is no functionality behind them.
+
 ```javascript
 // parameters passed to transcodeVideo
 VideoEditor.transcodeVideo(
@@ -361,8 +365,14 @@ function onVideoEditorProgress(info) {
 
 [How to Build Android Applications Based on FFmpeg by An Example](http://www.roman10.net/how-to-build-android-applications-based-on-ffmpeg-by-an-example/)
 
+
+## On Windows
+
+
 ## License
 
 Android: GPL
 
 iOS: MIT
+
+Windows: N/A
