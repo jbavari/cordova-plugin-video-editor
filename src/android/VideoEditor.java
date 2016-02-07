@@ -316,8 +316,8 @@ public class VideoEditor extends CordovaPlugin {
 
         // outputFileName
         final String outputFileName = options.optString(
-                "outputFileName",
-                new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
+            "outputFileName",
+            new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
         final String inputFilePath = options.getString("fileUri");
 
@@ -409,27 +409,31 @@ public class VideoEditor extends CordovaPlugin {
 
     }
 
-    private class TranscodeCallback implements ShellCallback {
-
-        @Override
-        public void shellOut(String shellLine) {
-            Log.d(TAG, "shellOut: " + shellLine);
-        }
-
-        @Override
-        public void processComplete(int exitValue) {
-            Log.d(TAG, "processComplete: " + exitValue);
-        }
-
-    }
-
+    /**
+     * createThumbnail
+     *
+     * Creates a thumbnail from the start of a video.
+     *
+     * ARGUMENTS
+     * =========
+     * fileUri        - input file path
+     * outputFileName - output file name
+     * atTime         - location in the video to create the thumbnail (in seconds),
+     * width          - width of the thumbnail (optional)
+     * height         - height of the thumbnail (optional)
+     * quality        - quality of the thumbnail (optional, between 1 and 100)
+     *
+     * RESPONSE
+     * ========
+     *
+     * outputFilePath - path to output file
+     *
+     * @param JSONArray args
+     * @return void
+     */
     @SuppressWarnings("unused")
     private void createThumbnail(JSONArray args) throws JSONException, IOException {
         Log.d(TAG, "createThumbnail firing");
-        /*  createThumbnail arguments:
-         fileUri: video input url
-         outputFileName: output file name
-         */
 
         JSONObject options = args.optJSONObject(0);
         Log.d(TAG, "options: " + options.toString());
@@ -445,13 +449,21 @@ public class VideoEditor extends CordovaPlugin {
             callback.error("input video does not exist.");
             return;
         }
-        String srcVideoPath = inFile.getAbsolutePath();
+        final String srcVideoPath = inFile.getAbsolutePath();
         String outputFileName = options.optString(
             "outputFileName",
             new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
 
-        Context appContext = cordova.getActivity().getApplicationContext();
+        final String atTime = options.optString("atTime", "0");
+        final String width = options.optString("width", "");
+        double quality = options.optDouble("quality", 100);
+        // use -q:v to control output quality. full range is a linear scale of 1-31 where a lower value results in a higher quality. 2-5 is a good range to try.
+        double qualityRatio = 32.0 / 100.0;
+        double thumbnailQuality = Math.abs(qualityRatio * quality - 31);
+        final long calculatedThumbnailQuality = Math.round(thumbnailQuality);
+
+        final Context appContext = cordova.getActivity().getApplicationContext();
         PackageManager pm = appContext.getPackageManager();
 
         ApplicationInfo ai;
@@ -464,33 +476,57 @@ public class VideoEditor extends CordovaPlugin {
 
         File tempStoragePath = appContext.getExternalCacheDir();
 
-        File outputFile =  new File(
+        final File outputFile =  new File(
             tempStoragePath.getPath(),
             "PIC_" + outputFileName + ".jpg"
         );
+        final String outputFilePath = outputFile.getAbsolutePath();
 
-        Bitmap thumbnail = ThumbnailUtils.createVideoThumbnail(srcVideoPath, MediaStore.Images.Thumbnails.MINI_KIND);
+        // start task
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
+                try {
+                    File tempFile = File.createTempFile("ffmpeg", null, appContext.getCacheDir());
+                    FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
 
-        FileOutputStream theOutputStream;
-        try {
-            if (!outputFile.exists()) {
-                if (!outputFile.createNewFile()) {
-                    callback.error("Could not save thumbnail.");
+                    ArrayList<String> al = new ArrayList<String>();
+                    al.add(ffmpegController.getBinaryPath());
+                    al.add("-y");
+                    al.add("-ss");
+                    al.add(atTime);
+                    al.add("-i");
+                    al.add(srcVideoPath);
+                    al.add("-vframes");
+                    al.add("1");
+                    al.add("-q:v");
+                    al.add(Long.toString(calculatedThumbnailQuality));
+                    if (!width.isEmpty()) {
+                        al.add("-filter:v");
+                        al.add("scale=" + width + ":-1");
+                    }
+                    al.add(outputFilePath);
+
+
+                    ffmpegController.execFFMPEG(al, new ShellCallback() {
+                        @Override
+                        public void shellOut(String shellLine) {
+                            Log.d(TAG, "shellOut: " + shellLine);
+                        }
+
+                        @Override
+                        public void processComplete(int exitValue) {
+                            Log.d(TAG, "processComplete: " + exitValue);
+                        }
+                    });
+                    Log.d(TAG, "ffmpeg finished");
+
+                    callback.success(outputFilePath);
+                } catch (Throwable e) {
+                    Log.d(TAG, "ffmpeg exception ", e);
+                    callback.error(e.toString());
                 }
             }
-            if (outputFile.canWrite()) {
-                theOutputStream = new FileOutputStream(outputFile);
-                if (theOutputStream != null) {
-                    thumbnail.compress(CompressFormat.JPEG, 75, theOutputStream);
-                } else {
-                    callback.error("Could not save thumbnail; target not writeable");
-                }
-            }
-        } catch (IOException e) {
-            callback.error(e.toString());
-        }
-
-        callback.success(outputFile.getAbsolutePath());
+        });
     }
 
     /**
@@ -805,7 +841,7 @@ public class VideoEditor extends CordovaPlugin {
         res += "0" + String.format(Locale.US, "%s", min) + ":";
         res += String.format(Locale.US, "%s", duration);
         return res;
-    };
+    }
 
     /**
      * getFileExt
@@ -823,7 +859,7 @@ public class VideoEditor extends CordovaPlugin {
         catch (Exception e) {
             return "";
         }
-    };
+    }
 
     /**
      * getTempDir
