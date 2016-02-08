@@ -210,9 +210,11 @@ public class FfprobeController {
 	            InputStreamReader isr = new InputStreamReader(is);
 	            BufferedReader br = new BufferedReader(isr);
 	            String line=null;
-	            while ( (line = br.readLine()) != null)
-	            	if (sc != null)
-	            		sc.shellOut(line);
+				StringBuilder result=new StringBuilder();
+				while ((line = br.readLine()) != null)
+					if (sc != null)
+						result.append(line + System.lineSeparator());
+				sc.shellOut(result.toString().trim());
 	                
 	            } catch (IOException ioe)
 	              {
