@@ -11,3 +11,4 @@ test/www/*.js
 *.xcworkspace
 !default.xcworkspace
 xcuserdata
+.idea

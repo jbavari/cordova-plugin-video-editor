@@ -56,4 +56,18 @@ VideoEditor.prototype.execFFMPEG = function(success, error, options) {
   exec(win, error, pluginName, 'execFFMPEG', [options]);
 };
 
+VideoEditor.prototype.execFFPROBE = function(success, error, options) {
+  var self = this;
+  var win = function(result) {
+    if (typeof result.progress !== 'undefined') {
+      if (typeof options.progress === 'function') {
+        options.progress(result.progress);
+      }
+    } else {
+      success(result);
+    }
+  };
+  exec(win, error, pluginName, 'execFFPROBE', [options]);
+};
+
 module.exports = new VideoEditor();
