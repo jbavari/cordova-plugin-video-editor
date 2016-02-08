@@ -353,6 +353,33 @@ function onVideoEditorProgress(info) {
 }
 ```
 
+### Use ffprobe to get info on a video (Android only)
+```javascript
+var cmd = ['-i', inputFilePath, '-v', 'quiet', '-print_format', 'json', '-show_format', '-show_streams'];
+
+VideoEditor.execFFPROBE(
+    ffprobeSuccess,
+    ffprobeError,
+    {
+        cmd: cmd,
+        progress: function(info) {
+            console.log(JSON.stringify(info, null, 2));
+            // for example output, see https://github.com/jbavari/cordova-plugin-video-editor/sample-ffprobe-output.json
+        }
+    }
+);
+
+function ffprobeSuccess(result) {
+    console.log('execFFPROBE success');
+}
+
+function ffprobeError(err) {
+    console.log('execFFPROBE error, err: ' + err);
+}
+```
+
+
+
 ## On iOS
 
 [iOS Developer AVFoundation Documentation](https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/AVFoundationPG/Articles/01_UsingAssets.html#//apple_ref/doc/uid/TP40010188-CH7-SW8)
