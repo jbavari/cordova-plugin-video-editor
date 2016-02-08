@@ -4,7 +4,7 @@ This is a cordova plugin to assist in several video editing tasks such as:
 
 * Transcoding
 * Trimming
-* Taking still images from time moments (currently the start of a video)
+* Creating thumbnails from a video file (now at a specific time in the video)
 
 After looking at an article on [How Vine Satisfied Its Need for Speed](http://www.technologyreview.com/view/510511/how-vine-satisfies-its-need-for-speed/), it was clear Cordova/Phonegap needed a way to modify videos to be faster for app's that need that speed.
 
@@ -135,9 +135,16 @@ VideoEditor.createThumbnail(
     error, // error cb
     {
         fileUri: 'file-uri-here', // the path to the video on the device
-        outputFileName: 'output-name' // the file name for the JPEG image
+        outputFileName: 'output-name', // the file name for the JPEG image
+        atTime: 2, // optional, location in the video to create the thumbnail (in seconds)
+        width: 320, // optional, width of the thumbnail
+        height: 480, // optional, height of the thumbnail
+        quality: 100 // optional, quality of the thumbnail (between 1 and 100)
     }
 )
+// atTime will default to 0 if not provided
+// width and height will be the same as the video input if they are not provided
+// quality will default to 100 if not provided
 ```
 
 ```javascript
@@ -164,7 +171,11 @@ function videoCaptureSuccess(mediaFiles) {
         createThumbnailError,
         {
             fileUri: mediaFile.fullPath,
-            outputFileName: videoFileName
+            outputFileName: videoFileName,
+            atTime: 2,
+            width: 320,
+            height: 480,
+            quality: 100
         }
     )
 }
@@ -174,6 +185,9 @@ function createThumbnailSuccess(result) {
     console.log('createThumbnailSuccess, result: ' + result);
 }
 ```
+
+#### A note on width and height used by createThumbnail
+The aspect ratio of the thumbnail created will match that of the video input.  This means you may not get exactly the width and height dimensions you give to `createThumbnail` for the jpeg.  This for your convenience but let us know if it is a problem.  I am considering adding a `maintainAspectRatio` option to `createThumbnail` (and when this option is false you might have stretched, square thumbnails :laughing:).
 
 ### Execute an FFMPEG command (Android only)
 [FFMPEG documentation](https://ffmpeg.org/ffmpeg.html)
