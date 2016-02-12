@@ -42,9 +42,14 @@
 
         <header-file src="src/ios/VideoEditor.h" />
         <source-file src="src/ios/VideoEditor.m" />
+
+        <header-file src="src/ios/SDAVAssetExportSession.h" />
+        <source-file src="src/ios/SDAVAssetExportSession.m" />
+
         <framework src="AssetsLibrary.framework" />
         <framework src="AVFoundation.framework" />
         <framework src="MediaPlayer.framework" />
+        <framework src="CoreVideo.framework" />
     </platform>
 
     <!-- Windows 8 -->

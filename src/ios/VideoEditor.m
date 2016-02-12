@@ -7,6 +7,7 @@
 
 #import <Cordova/CDV.h>
 #import "VideoEditor.h"
+#import "SDAVAssetExportSession.h"
 
 @interface VideoEditor ()
 
@@ -27,7 +28,12 @@
  * quality:         - transcode quality
  * outputFileType:  - output file type
  * saveToLibrary:   - save to gallery
- * progress:        - optional callback function that receives progress info
+ * width            - width for the output video
+ * height           - height for the output video
+ * videoBitrate     - video bitrate for the output video in bits
+ * audioChannels    - number of audio channels for the output video
+ * audioSampleRate  - sample rate for the audio (samples per second)
+ * audioBitRate     - audio bitrate for the output video in bits
  *
  * RESPONSE
  * ========
@@ -48,29 +54,17 @@
     NSString *assetPath = [options objectForKey:@"fileUri"];
     NSString *videoFileName = [options objectForKey:@"outputFileName"];
 
-    CDVQualityType qualityType = ([options objectForKey:@"quality"]) ? [[options objectForKey:@"quality"] intValue] : LowQuality;
-
-    NSString *presetName = Nil;
-
-    switch(qualityType) {
-        case HighQuality:
-            presetName = AVAssetExportPresetHighestQuality;
-            break;
-        case MediumQuality:
-        default:
-            presetName = AVAssetExportPresetMediumQuality;
-            break;
-        case LowQuality:
-            presetName = AVAssetExportPresetLowQuality;
-    }
-
     CDVOutputFileType outputFileType = ([options objectForKey:@"outputFileType"]) ? [[options objectForKey:@"outputFileType"] intValue] : MPEG4;
 
     BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? [[options objectForKey:@"optimizeForNetworkUse"] intValue] : NO;
-
-    float videoDuration = [[options objectForKey:@"duration"] floatValue];
-
     BOOL saveToPhotoAlbum = [options objectForKey:@"saveToLibrary"] ? [[options objectForKey:@"saveToLibrary"] boolValue] : YES;
+    float videoDuration = [[options objectForKey:@"duration"] floatValue];
+    float width = [[options objectForKey:@"width"] floatValue];
+    float height = [[options objectForKey:@"height"] floatValue];
+    int videoBitRate = ([options objectForKey:@"videoBitRate"]) ? [[options objectForKey:@"videoBitRate"] intValue] : 1000000; // default to 1 megabit
+    int audioChannels = ([options objectForKey:@"audioChannels"]) ? [[options objectForKey:@"audioChannels"] intValue] : 2;
+    int audioSampleRate = ([options objectForKey:@"audioSampleRate"]) ? [[options objectForKey:@"audioSampleRate"] intValue] : 44100;
+    int audioBitRate = ([options objectForKey:@"audioBitRate"]) ? [[options objectForKey:@"audioBitRate"] intValue] : 128000; // default to 128 kilobits
 
     NSString *stringOutputFileType = Nil;
     NSString *outputExtension = Nil;
@@ -106,51 +100,66 @@
         return;
     }
 
+    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:assetPath] options:nil];
+
     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-    NSString *tempVideoPath =[NSString stringWithFormat:@"%@/%@%@", cacheDir, videoFileName, @".mov"];
-    NSData *videoData = [NSData dataWithContentsOfFile:assetPath];
-    [videoData writeToFile:tempVideoPath atomically:NO];
+    NSString *outputPath = [NSString stringWithFormat:@"%@/%@%@", cacheDir, videoFileName, outputExtension];
+    NSURL *outputURL = [NSURL fileURLWithPath:outputPath];
 
-    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:tempVideoPath] options:nil];
+    NSArray *tracks = [avAsset tracksWithMediaType:AVMediaTypeVideo];
+    AVAssetTrack *track = [tracks objectAtIndex:0];
+    CGSize mediaSize = track.naturalSize;
 
-    // run in background
+    float videoWidth = mediaSize.width;
+    float videoHeight = mediaSize.height;
+    float aspectRatio = videoWidth / videoHeight;
+    int newWidth = (width && height) ? height * aspectRatio : videoWidth;
+    int newHeight = (width && height) ? newWidth / aspectRatio : videoHeight;
+
+    NSLog(@"input videoWidth: %f", videoWidth);
+    NSLog(@"input videoHeight: %f", videoHeight);
+    NSLog(@"output newWidth: %d", newWidth);
+    NSLog(@"output newHeight: %d", newHeight);
+
+    SDAVAssetExportSession *encoder = [SDAVAssetExportSession.alloc initWithAsset:avAsset];
+    encoder.outputFileType = stringOutputFileType;
+    encoder.outputURL = outputURL;
+    encoder.videoSettings = @
+    {
+        AVVideoCodecKey: AVVideoCodecH264,
+        AVVideoWidthKey: [NSNumber numberWithInt: newWidth],
+        AVVideoHeightKey: [NSNumber numberWithInt: newHeight],
+        AVVideoCompressionPropertiesKey: @
+        {
+            AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitRate],
+            AVVideoProfileLevelKey: AVVideoProfileLevelH264High40
+        },
+    };
+    encoder.audioSettings = @
+    {
+        AVFormatIDKey: @(kAudioFormatMPEG4AAC),
+        AVNumberOfChannelsKey: [NSNumber numberWithInt: audioChannels],
+        AVSampleRateKey: [NSNumber numberWithInt: audioSampleRate],
+        AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitRate],
+    };
+
+    //  Set up a semaphore for the completion handler and progress timer
+    dispatch_semaphore_t sessionWaitSemaphore = dispatch_semaphore_create(0);
+
+    void (^completionHandler)(void) = ^(void)
+    {
+        dispatch_semaphore_signal(sessionWaitSemaphore);
+    };
+
+    // do it
+
     [self.commandDelegate runInBackground:^{
-        AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]initWithAsset:avAsset presetName: presetName];
-        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
-        NSString *videoPath = [NSString stringWithFormat:@"%@/%@%@", [paths objectAtIndex:0], videoFileName, outputExtension];
-
-        exportSession.outputURL = [NSURL fileURLWithPath:videoPath];
-        exportSession.outputFileType = stringOutputFileType;
-        exportSession.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
-
-        NSLog(@"videopath of your file: %@", videoPath);
-
-        if (videoDuration)
-        {
-            int32_t preferredTimeScale = 600;
-            CMTime startTime = CMTimeMakeWithSeconds(0, preferredTimeScale);
-            CMTime stopTime = CMTimeMakeWithSeconds(videoDuration, preferredTimeScale);
-            CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
-            exportSession.timeRange = exportTimeRange;
-        }
-
-        //  Set up a semaphore for the completion handler and progress timer
-        dispatch_semaphore_t sessionWaitSemaphore = dispatch_semaphore_create(0);
-
-        void (^completionHandler)(void) = ^(void)
-        {
-            dispatch_semaphore_signal(sessionWaitSemaphore);
-        };
-
-        // do it
-        [exportSession exportAsynchronouslyWithCompletionHandler:completionHandler];
+        [encoder exportAsynchronouslyWithCompletionHandler:completionHandler];
 
         do {
             dispatch_time_t dispatchTime = DISPATCH_TIME_FOREVER;  // if we dont want progress, we will wait until it finishes.
             dispatchTime = getDispatchTimeFromSeconds((float)1.0);
-            double progress = [exportSession progress] * 100;
-
-            NSLog([NSString stringWithFormat:@"AVAssetExport running progress=%3.2f%%", progress]);
+            double progress = [encoder progress] * 100;
 
             NSMutableDictionary *dictionary = [[NSMutableDictionary alloc] init];
             [dictionary setValue: [NSNumber numberWithDouble: progress] forKey: @"progress"];
@@ -160,10 +169,10 @@
             [result setKeepCallbackAsBool:YES];
             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
             dispatch_semaphore_wait(sessionWaitSemaphore, dispatchTime);
-        } while( [exportSession status] < AVAssetExportSessionStatusCompleted );
+        } while( [encoder status] < AVAssetExportSessionStatusCompleted );
 
         // this is kinda odd but must be done
-        if ([exportSession status] == AVAssetExportSessionStatusCompleted) {
+        if ([encoder status] == AVAssetExportSessionStatusCompleted) {
             NSMutableDictionary *dictionary = [[NSMutableDictionary alloc] init];
             // AVAssetExportSessionStatusCompleted will not always mean progress is 100 so hard code it below
             double progress = 100.00;
@@ -175,26 +184,21 @@
             [self.commandDelegate sendPluginResult:result callbackId:command.callbackId];
         }
 
-        switch ([exportSession status]) {
-            case AVAssetExportSessionStatusCompleted:
-                if (saveToPhotoAlbum) {
-                    UISaveVideoAtPathToSavedPhotosAlbum(videoPath, self, nil, nil);
-                }
-                NSLog(@"Export Complete %d %@", exportSession.status, exportSession.error);
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:videoPath] callbackId:command.callbackId];
-                break;
-            case AVAssetExportSessionStatusFailed:
-                NSLog(@"Export failed: %@", [[exportSession error] localizedDescription]);
-                [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[[exportSession error] localizedDescription]] callbackId:command.callbackId];
-                break;
-            case AVAssetExportSessionStatusCancelled:
-                NSLog(@"Export canceled");
-                break;
-            default:
-                NSLog(@"Export default in switch");
-                break;
+        if (encoder.status == AVAssetExportSessionStatusCompleted)
+        {
+            NSLog(@"Video export succeeded");
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
         }
-
+        else if (encoder.status == AVAssetExportSessionStatusCancelled)
+        {
+            NSLog(@"Video export cancelled");
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Video export cancelled"] callbackId:command.callbackId];
+        }
+        else
+        {
+            NSString *error = [NSString stringWithFormat:@"Video export failed with error: %@ (%ld)", encoder.error.localizedDescription, (long)encoder.error.code];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error] callbackId:command.callbackId];
+        }
     }];
 }
 
