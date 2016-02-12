@@ -53,12 +53,10 @@
 
     NSString *assetPath = [options objectForKey:@"fileUri"];
     NSString *videoFileName = [options objectForKey:@"outputFileName"];
-
     CDVOutputFileType outputFileType = ([options objectForKey:@"outputFileType"]) ? [[options objectForKey:@"outputFileType"] intValue] : MPEG4;
-
     BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? [[options objectForKey:@"optimizeForNetworkUse"] intValue] : NO;
     BOOL saveToPhotoAlbum = [options objectForKey:@"saveToLibrary"] ? [[options objectForKey:@"saveToLibrary"] boolValue] : YES;
-    float videoDuration = [[options objectForKey:@"duration"] floatValue];
+    //float videoDuration = [[options objectForKey:@"duration"] floatValue];
     float width = [[options objectForKey:@"width"] floatValue];
     float height = [[options objectForKey:@"height"] floatValue];
     int videoBitRate = ([options objectForKey:@"videoBitRate"]) ? [[options objectForKey:@"videoBitRate"] intValue] : 1000000; // default to 1 megabit
@@ -124,6 +122,7 @@
     SDAVAssetExportSession *encoder = [SDAVAssetExportSession.alloc initWithAsset:avAsset];
     encoder.outputFileType = stringOutputFileType;
     encoder.outputURL = outputURL;
+    encoder.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
     encoder.videoSettings = @
     {
         AVVideoCodecKey: AVVideoCodecH264,
@@ -142,6 +141,16 @@
         AVSampleRateKey: [NSNumber numberWithInt: audioSampleRate],
         AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitRate],
     };
+
+    /* // setting timeRange is not possible due to a bug with SDAVAssetExportSession (https://github.com/rs/SDAVAssetExportSession/issues/28)
+    if (videoDuration) {
+        int32_t preferredTimeScale = 600;
+        CMTime startTime = CMTimeMakeWithSeconds(0, preferredTimeScale);
+        CMTime stopTime = CMTimeMakeWithSeconds(videoDuration, preferredTimeScale);
+        CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
+        encoder.timeRange = exportTimeRange;
+    }
+    */
 
     //  Set up a semaphore for the completion handler and progress timer
     dispatch_semaphore_t sessionWaitSemaphore = dispatch_semaphore_create(0);
