@@ -111,6 +111,17 @@
     float videoWidth = mediaSize.width;
     float videoHeight = mediaSize.height;
     float aspectRatio = videoWidth / videoHeight;
+
+    // for some portrait videos ios gives the wrong width and height, this fixes that
+    NSString *videoOrientation = [self getOrientationForTrack:avAsset];
+    if ([videoOrientation isEqual: @"portrait"]) {
+        if (videoWidth > videoHeight) {
+            videoWidth = mediaSize.height;
+            videoHeight = mediaSize.width;
+            aspectRatio = videoWidth / videoHeight;
+        }
+    }
+
     int newWidth = (width && height) ? height * aspectRatio : videoWidth;
     int newHeight = (width && height) ? newWidth / aspectRatio : videoHeight;
 
@@ -447,6 +458,23 @@
     UIImage *newImage = UIGraphicsGetImageFromCurrentImageContext();
     UIGraphicsEndImageContext();
     return newImage;
+}
+
+// inspired by http://stackoverflow.com/a/6046421/1673842
+- (NSString*)getOrientationForTrack:(AVAsset *)asset
+{
+    AVAssetTrack *videoTrack = [[asset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
+    CGSize size = [videoTrack naturalSize];
+    CGAffineTransform txf = [videoTrack preferredTransform];
+
+    if (size.width == txf.tx && size.height == txf.ty)
+        return @"landscape";
+    else if (txf.tx == 0 && txf.ty == 0)
+        return @"landscape";
+    else if (txf.tx == 0 && txf.ty == size.width)
+        return @"portrait";
+    else
+        return @"portrait";
 }
 
 static dispatch_time_t getDispatchTimeFromSeconds(float seconds) {
