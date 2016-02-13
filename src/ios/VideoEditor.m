@@ -207,6 +207,9 @@
         if (encoder.status == AVAssetExportSessionStatusCompleted)
         {
             NSLog(@"Video export succeeded");
+            if (saveToPhotoAlbum) {
+                UISaveVideoAtPathToSavedPhotosAlbum(outputPath, self, nil, nil);
+            }
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:outputPath] callbackId:command.callbackId];
         }
         else if (encoder.status == AVAssetExportSessionStatusCancelled)
