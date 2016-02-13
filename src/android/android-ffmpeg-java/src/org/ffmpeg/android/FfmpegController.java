@@ -224,7 +224,7 @@ public class FfmpegController {
 
 	public void processVideo(Clip in, Clip out, boolean enableExperimental, ShellCallback sc) throws Exception {
 
-  	ArrayList<String> cmd = new ArrayList<String>();
+    ArrayList<String> cmd = new ArrayList<String>();
 
 		cmd.add(mFfmpegBin);
 		cmd.add("-y");
@@ -235,16 +235,17 @@ public class FfmpegController {
 			cmd.add(in.format);
 		}
 
-    if (in.videoCodec != null)
-    {
-    	cmd.add(Argument.VIDEOCODEC);
-    	cmd.add(in.videoCodec);
+		if (in.videoCodec != null)
+		{
+			cmd.add(Argument.VIDEOCODEC);
+			cmd.add(in.videoCodec);
 
-    	if (in.videoCodec == "libx264") {
-        cmd.add("-preset");
-        cmd.add("ultrafast"); // needed b/c libx264 doesn't utilize all CPU cores
-    	}
-    }
+			if (in.videoCodec == "libx264")
+			{
+				cmd.add("-preset");
+				cmd.add("ultrafast"); // needed b/c libx264 doesn't utilize all CPU cores
+			}
+		}
 
 		if (in.audioCodec != null)
 		{
@@ -267,6 +268,7 @@ public class FfmpegController {
 			cmd.add(out.width + "x" + out.height);
 
 		}
+
 		if (out.videoFps != null)
 		{
 			cmd.add(Argument.FRAMERATE);
@@ -285,7 +287,6 @@ public class FfmpegController {
 			cmd.add(out.videoBitStreamFilter);
 		}
 
-
 		if (out.videoFilter != null)
 		{
 			cmd.add("-vf");
@@ -303,6 +304,7 @@ public class FfmpegController {
 			cmd.add(Argument.AUDIOBITSTREAMFILTER);
 			cmd.add(out.audioBitStreamFilter);
 		}
+
 		if (out.audioChannels > 0)
 		{
 			cmd.add(Argument.CHANNELS_AUDIO);
@@ -313,6 +315,12 @@ public class FfmpegController {
 		{
 			cmd.add(Argument.BITRATE_AUDIO);
 			cmd.add(out.audioBitrate + "k");
+		}
+
+		if (out.audioSampleRate > 0)
+		{
+			cmd.add(Argument.FREQ_AUDIO);
+			cmd.add(out.audioSampleRate + "");
 		}
 
 		if (out.format != null)
@@ -335,12 +343,12 @@ public class FfmpegController {
 
 		// I had issues with orientation and this fixes it, YMMV
 		// If orientation is incorrect uncomment out these 4 lines below
-    /*
+		/*
 		cmd.add("-vf");
 		cmd.add("transpose=1");
 		cmd.add("-metadata:s:v:0");
 		cmd.add("rotate=0");
-    */
+		*/
 
 		cmd.add(new File(out.path).getCanonicalPath());
 

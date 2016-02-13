@@ -2,7 +2,6 @@ package org.apache.cordova.videoeditor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -31,9 +30,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.Bitmap.CompressFormat;
-import android.media.ThumbnailUtils;
+import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
@@ -119,6 +116,13 @@ public class VideoEditor extends CordovaPlugin {
      * outputFileType:  - output file type
      * saveToLibrary:   - save to gallery
      * deleteInputFile: - optionally remove input file
+     * width            - width for the output video
+     * height           - height for the output video
+     * fps              - fps the video
+     * videoBitrate     - video bitrate for the output video in bits
+     * audioChannels    - number of audio channels for the output video
+     * audioSampleRate  - sample rate for the audio (samples per second)
+     * audioBitrate     - audio bitrate for the output video in bits
      *
      * RESPONSE
      * ========
@@ -146,15 +150,31 @@ public class VideoEditor extends CordovaPlugin {
             "outputFileName",
             new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
-        final int videoQuality = options.optInt("quality", HighQuality);
         final int outputType = options.optInt("outputFileType", MPEG4);
+        final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
+        int width = options.optInt("width", 0);
+        int height = options.optInt("height", 0);
+        final int fps = options.optInt("fps", 24);
+        final int videoBitrate = options.optInt("videoBitrate", 1000000) / 1000; // default to 1 megabit
+        final int audioChannels = options.optInt("audioChannels", 2);
+        final int audioSampleRate = options.optInt("audioSampleRate", 44100);
+        final int audioBitrate = options.optInt("audioBitrate", 128000) / 1000; // default to 128 kilobits
 
         Log.d(TAG, "videoSrcPath: " + videoSrcPath);
 
         String outputExtension;
-        // arbitrary values used for ffmpeg, tailor to your needs
-        final int outputWidth;
-        final int outputHeight;
+
+        // get the videos aspect ratio and use the provided width and height to scale it without losing aspect ratio
+        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+        mmr.setDataSource(videoSrcPath);
+        float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+        float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+        Log.d(TAG, "videoWidth x videoHeight = " + videoWidth + "x" + videoHeight);
+        float aspectRatio = videoWidth / videoHeight;
+        Log.d(TAG, "video aspectRatio = " + aspectRatio);
+        final int outputWidth = (width != 0 && height != 0) ? Math.round(height * aspectRatio) : Math.round(videoWidth);
+        final int outputHeight = (width != 0 && height != 0) ? Math.round(outputWidth / aspectRatio) : Math.round(videoHeight);
+        Log.d(TAG, "video outputWidth x outputHeight = " + outputWidth + "x" + outputHeight);
 
         switch(outputType) {
             case QUICK_TIME:
@@ -169,22 +189,6 @@ public class VideoEditor extends CordovaPlugin {
             case MPEG4:
             default:
                 outputExtension = ".mp4";
-                break;
-        }
-
-        switch(videoQuality) {
-            case LowQuality:
-                outputWidth = 320;
-                outputHeight = 320;
-                break;
-            case MediumQuality:
-                outputWidth = 480;
-                outputHeight = 480;
-                break;
-            case HighQuality:
-            default:
-                outputWidth = 640;
-                outputHeight = 640;
                 break;
         }
 
@@ -225,9 +229,6 @@ public class VideoEditor extends CordovaPlugin {
 
         Log.d(TAG, "outputFilePath: " + outputFilePath);
 
-        final double videoDuration = options.optDouble("duration", 0);
-        final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
-
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
                 try {
@@ -235,17 +236,17 @@ public class VideoEditor extends CordovaPlugin {
                     FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
 
                     Clip clipIn = new Clip(videoSrcPath);
-
                     Clip clipOut = new Clip(outputFilePath);
                     clipOut.videoCodec = "libx264";
-                    clipOut.videoFps = "24"; // tailor this to your needs
-                    clipOut.videoBitrate = 512; // 512 kbps - tailor this to your needs
-                    clipOut.audioChannels = 1;
                     clipOut.width = outputWidth;
                     clipOut.height = outputHeight;
-                    clipOut.duration = videoDuration;
+                    clipOut.videoFps = Integer.toString(fps); // tailor this to your needs
+                    clipOut.videoBitrate = videoBitrate; // 512 kbps - tailor this to your needs
+                    clipOut.audioChannels = audioChannels;
+                    clipOut.audioBitrate = audioBitrate;
+                    clipOut.audioSampleRate = audioSampleRate;
 
-                    ffmpegController.processVideo(clipIn, clipOut, true, new ShellUtils.ShellCallback() {
+                    ffmpegController.processVideo(clipIn, clipOut, true, new ShellCallback() {
                         @Override
                         public void shellOut(String shellLine) {
                             Log.d(TAG, "shellOut: " + shellLine);
