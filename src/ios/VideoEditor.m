@@ -33,7 +33,7 @@
  * videoBitrate     - video bitrate for the output video in bits
  * audioChannels    - number of audio channels for the output video
  * audioSampleRate  - sample rate for the audio (samples per second)
- * audioBitRate     - audio bitrate for the output video in bits
+ * audioBitrate     - audio bitrate for the output video in bits
  *
  * RESPONSE
  * ========
@@ -59,10 +59,10 @@
     //float videoDuration = [[options objectForKey:@"duration"] floatValue];
     float width = [[options objectForKey:@"width"] floatValue];
     float height = [[options objectForKey:@"height"] floatValue];
-    int videoBitRate = ([options objectForKey:@"videoBitRate"]) ? [[options objectForKey:@"videoBitRate"] intValue] : 1000000; // default to 1 megabit
+    int videoBitrate = ([options objectForKey:@"videoBitrate"]) ? [[options objectForKey:@"videoBitrate"] intValue] : 1000000; // default to 1 megabit
     int audioChannels = ([options objectForKey:@"audioChannels"]) ? [[options objectForKey:@"audioChannels"] intValue] : 2;
     int audioSampleRate = ([options objectForKey:@"audioSampleRate"]) ? [[options objectForKey:@"audioSampleRate"] intValue] : 44100;
-    int audioBitRate = ([options objectForKey:@"audioBitRate"]) ? [[options objectForKey:@"audioBitRate"] intValue] : 128000; // default to 128 kilobits
+    int audioBitrate = ([options objectForKey:@"audioBitrate"]) ? [[options objectForKey:@"audioBitrate"] intValue] : 128000; // default to 128 kilobits
 
     NSString *stringOutputFileType = Nil;
     NSString *outputExtension = Nil;
@@ -130,16 +130,16 @@
         AVVideoHeightKey: [NSNumber numberWithInt: newHeight],
         AVVideoCompressionPropertiesKey: @
         {
-            AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitRate],
+            AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitrate],
             AVVideoProfileLevelKey: AVVideoProfileLevelH264High40
-        },
+        }
     };
     encoder.audioSettings = @
     {
         AVFormatIDKey: @(kAudioFormatMPEG4AAC),
         AVNumberOfChannelsKey: [NSNumber numberWithInt: audioChannels],
         AVSampleRateKey: [NSNumber numberWithInt: audioSampleRate],
-        AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitRate],
+        AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitrate]
     };
 
     /* // setting timeRange is not possible due to a bug with SDAVAssetExportSession (https://github.com/rs/SDAVAssetExportSession/issues/28)
