@@ -6,11 +6,6 @@
 //
 
 var VideoEditorOptions = {
-    Quality: {
-        HIGH_QUALITY: 0,
-        MEDIUM_QUALITY: 1,
-        LOW_QUALITY: 2
-    },
     OptimizeForNetworkUse: {
         NO: 0,
         YES: 1

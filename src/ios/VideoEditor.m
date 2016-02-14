@@ -23,11 +23,11 @@
  * ARGUMENTS
  * =========
  *
- * fileUri:         - path to input video
- * outputFileName:  - output file name
- * quality:         - transcode quality
- * outputFileType:  - output file type
- * saveToLibrary:   - save to gallery
+ * fileUri          - path to input video
+ * outputFileName   - output file name
+ * quality          - transcode quality
+ * outputFileType   - output file type
+ * saveToLibrary    - save to gallery
  * width            - width for the output video
  * height           - height for the output video
  * videoBitrate     - video bitrate for the output video in bits
@@ -136,32 +136,32 @@
     encoder.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
     encoder.videoSettings = @
     {
-        AVVideoCodecKey: AVVideoCodecH264,
-        AVVideoWidthKey: [NSNumber numberWithInt: newWidth],
-        AVVideoHeightKey: [NSNumber numberWithInt: newHeight],
-        AVVideoCompressionPropertiesKey: @
+    AVVideoCodecKey: AVVideoCodecH264,
+    AVVideoWidthKey: [NSNumber numberWithInt: newWidth],
+    AVVideoHeightKey: [NSNumber numberWithInt: newHeight],
+    AVVideoCompressionPropertiesKey: @
         {
-            AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitrate],
-            AVVideoProfileLevelKey: AVVideoProfileLevelH264High40
+        AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitrate],
+        AVVideoProfileLevelKey: AVVideoProfileLevelH264High40
         }
     };
     encoder.audioSettings = @
     {
-        AVFormatIDKey: @(kAudioFormatMPEG4AAC),
-        AVNumberOfChannelsKey: [NSNumber numberWithInt: audioChannels],
-        AVSampleRateKey: [NSNumber numberWithInt: audioSampleRate],
-        AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitrate]
+    AVFormatIDKey: @(kAudioFormatMPEG4AAC),
+    AVNumberOfChannelsKey: [NSNumber numberWithInt: audioChannels],
+    AVSampleRateKey: [NSNumber numberWithInt: audioSampleRate],
+    AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitrate]
     };
 
     /* // setting timeRange is not possible due to a bug with SDAVAssetExportSession (https://github.com/rs/SDAVAssetExportSession/issues/28)
-    if (videoDuration) {
-        int32_t preferredTimeScale = 600;
-        CMTime startTime = CMTimeMakeWithSeconds(0, preferredTimeScale);
-        CMTime stopTime = CMTimeMakeWithSeconds(videoDuration, preferredTimeScale);
-        CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
-        encoder.timeRange = exportTimeRange;
-    }
-    */
+     if (videoDuration) {
+     int32_t preferredTimeScale = 600;
+     CMTime startTime = CMTimeMakeWithSeconds(0, preferredTimeScale);
+     CMTime stopTime = CMTimeMakeWithSeconds(videoDuration, preferredTimeScale);
+     CMTimeRange exportTimeRange = CMTimeRangeFromTimeToTime(startTime, stopTime);
+     encoder.timeRange = exportTimeRange;
+     }
+     */
 
     //  Set up a semaphore for the completion handler and progress timer
     dispatch_semaphore_t sessionWaitSemaphore = dispatch_semaphore_create(0);
@@ -252,6 +252,10 @@
     NSLog(@"createThumbnail");
     NSDictionary* options = [command.arguments objectAtIndex:0];
 
+    if ([options isKindOfClass:[NSNull class]]) {
+        options = [NSDictionary dictionary];
+    }
+
     NSString* srcVideoPath = [options objectForKey:@"fileUri"];
     NSString* outputFileName = [options objectForKey:@"outputFileName"];
     float atTime = ([options objectForKey:@"atTime"]) ? [[options objectForKey:@"atTime"] floatValue] : 0;
@@ -285,6 +289,74 @@
     {
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"failed to create thumbnail file"] callbackId:command.callbackId];
     }
+}
+
+/**
+ * getVideoInfo
+ *
+ * Creates a thumbnail from the start of a video.
+ *
+ * ARGUMENTS
+ * =========
+ * fileUri       - input file path
+ *
+ * RESPONSE
+ * ========
+ *
+ * width         - width of the video
+ * height        - height of the video
+ * orientation   - orientation of the video
+ * duration      - duration of the video (in seconds)
+ * size          - size of the video
+ * bitrate       - bitrate of the video (in bits per second)
+ *
+ * @param CDVInvokedUrlCommand command
+ * @return void
+ */
+- (void) getVideoInfo:(CDVInvokedUrlCommand*)command
+{
+    NSLog(@"getVideoInfo");
+    NSDictionary* options = [command.arguments objectAtIndex:0];
+
+    if ([options isKindOfClass:[NSNull class]]) {
+        options = [NSDictionary dictionary];
+    }
+
+    NSString *assetPath = [options objectForKey:@"fileUri"];
+    // remove file:// from the assetPath if it is there
+    assetPath = [[assetPath stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
+
+    unsigned long long size = [[NSFileManager defaultManager] attributesOfItemAtPath:assetPath error:nil].fileSize;
+
+    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:assetPath] options:nil];
+
+    NSArray *tracks = [avAsset tracksWithMediaType:AVMediaTypeVideo];
+    AVAssetTrack *track = [tracks objectAtIndex:0];
+    CGSize mediaSize = track.naturalSize;
+
+    float videoWidth = mediaSize.width;
+    float videoHeight = mediaSize.height;
+    float aspectRatio = videoWidth / videoHeight;
+
+    // for some portrait videos ios gives the wrong width and height, this fixes that
+    NSString *videoOrientation = [self getOrientationForTrack:avAsset];
+    if ([videoOrientation isEqual: @"portrait"]) {
+        if (videoWidth > videoHeight) {
+            videoWidth = mediaSize.height;
+            videoHeight = mediaSize.width;
+            aspectRatio = videoWidth / videoHeight;
+        }
+    }
+
+    NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
+    [dict setObject:[NSNumber numberWithFloat:videoWidth] forKey:@"width"];
+    [dict setObject:[NSNumber numberWithFloat:videoHeight] forKey:@"height"];
+    [dict setValue:videoOrientation forKey:@"orientation"];
+    [dict setValue:[NSNumber numberWithFloat:track.timeRange.duration.value / 600.0] forKey:@"duration"];
+    [dict setObject:[NSNumber numberWithLongLong:size] forKey:@"size"];
+    [dict setObject:[NSNumber numberWithFloat:track.estimatedDataRate] forKey:@"bitrate"];
+
+    [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:command.callbackId];
 }
 
 /**
@@ -448,7 +520,7 @@
 
 // to scale images without changing aspect ratio (http://stackoverflow.com/a/8224161/1673842)
 - (UIImage*)scaleImage:(UIImage*)image
-              toSize:(CGSize)newSize;
+                toSize:(CGSize)newSize;
 {
     float oldWidth = image.size.width;
     float scaleFactor = newSize.width / oldWidth;
