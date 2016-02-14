@@ -136,21 +136,21 @@
     encoder.shouldOptimizeForNetworkUse = optimizeForNetworkUse;
     encoder.videoSettings = @
     {
-    AVVideoCodecKey: AVVideoCodecH264,
-    AVVideoWidthKey: [NSNumber numberWithInt: newWidth],
-    AVVideoHeightKey: [NSNumber numberWithInt: newHeight],
-    AVVideoCompressionPropertiesKey: @
+        AVVideoCodecKey: AVVideoCodecH264,
+        AVVideoWidthKey: [NSNumber numberWithInt: newWidth],
+        AVVideoHeightKey: [NSNumber numberWithInt: newHeight],
+        AVVideoCompressionPropertiesKey: @
         {
-        AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitrate],
-        AVVideoProfileLevelKey: AVVideoProfileLevelH264High40
+            AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitrate],
+            AVVideoProfileLevelKey: AVVideoProfileLevelH264High40
         }
     };
     encoder.audioSettings = @
     {
-    AVFormatIDKey: @(kAudioFormatMPEG4AAC),
-    AVNumberOfChannelsKey: [NSNumber numberWithInt: audioChannels],
-    AVSampleRateKey: [NSNumber numberWithInt: audioSampleRate],
-    AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitrate]
+        AVFormatIDKey: @(kAudioFormatMPEG4AAC),
+        AVNumberOfChannelsKey: [NSNumber numberWithInt: audioChannels],
+        AVSampleRateKey: [NSNumber numberWithInt: audioSampleRate],
+        AVEncoderBitRateKey: [NSNumber numberWithInt: audioBitrate]
     };
 
     /* // setting timeRange is not possible due to a bug with SDAVAssetExportSession (https://github.com/rs/SDAVAssetExportSession/issues/28)
