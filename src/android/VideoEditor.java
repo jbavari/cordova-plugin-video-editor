@@ -84,6 +84,13 @@ public class VideoEditor extends CordovaPlugin {
                 callback.error(e.toString());
             }
             return true;
+        } else if (action.equals("getVideoInfo")) {
+            try {
+                this.getVideoInfo(args);
+            } catch (IOException e) {
+                callback.error(e.toString());
+            }
+            return true;
         } else if (action.equals("execFFMPEG")) {
             try {
                 this.execFFMPEG(args);
@@ -110,19 +117,20 @@ public class VideoEditor extends CordovaPlugin {
      * ARGUMENTS
      * =========
      *
-     * fileUri:         - path to input video
-     * outputFileName:  - output file name
-     * quality:         - transcode quality
-     * outputFileType:  - output file type
-     * saveToLibrary:   - save to gallery
-     * deleteInputFile: - optionally remove input file
-     * width            - width for the output video
-     * height           - height for the output video
-     * fps              - fps the video
-     * videoBitrate     - video bitrate for the output video in bits
-     * audioChannels    - number of audio channels for the output video
-     * audioSampleRate  - sample rate for the audio (samples per second)
-     * audioBitrate     - audio bitrate for the output video in bits
+     * fileUri              - path to input video
+     * outputFileName       - output file name
+     * quality              - transcode quality
+     * outputFileType       - output file type
+     * saveToLibrary        - save to gallery
+     * deleteInputFile      - optionally remove input file
+     * maintainAspectRatio  - maintain the aspect ratio of the input video
+     * width                - width for the output video
+     * height               - height for the output video
+     * fps                  - fps the video
+     * videoBitrate         - video bitrate for the output video in bits
+     * audioChannels        - number of audio channels for the output video
+     * audioSampleRate      - sample rate for the audio (samples per second)
+     * audioBitrate         - audio bitrate for the output video in bits
      *
      * RESPONSE
      * ========
@@ -147,11 +155,12 @@ public class VideoEditor extends CordovaPlugin {
 
         final String videoSrcPath = inFile.getAbsolutePath();
         final String outputFileName = options.optString(
-            "outputFileName",
-            new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
+                "outputFileName",
+                new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
         final int outputType = options.optInt("outputFileType", MPEG4);
         final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
+        final boolean maintainAspectRatio = options.optBoolean("maintainAspectRatio", true);
         int width = options.optInt("width", 0);
         int height = options.optInt("height", 0);
         final int fps = options.optInt("fps", 24);
@@ -167,13 +176,11 @@ public class VideoEditor extends CordovaPlugin {
         // get the videos aspect ratio and use the provided width and height to scale it without losing aspect ratio
         MediaMetadataRetriever mmr = new MediaMetadataRetriever();
         mmr.setDataSource(videoSrcPath);
-        float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-        float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+        int videoWidth = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+        int videoHeight = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
         Log.d(TAG, "videoWidth x videoHeight = " + videoWidth + "x" + videoHeight);
-        float aspectRatio = videoWidth / videoHeight;
-        Log.d(TAG, "video aspectRatio = " + aspectRatio);
-        final int outputWidth = (width != 0 && height != 0) ? Math.round(height * aspectRatio) : Math.round(videoWidth);
-        final int outputHeight = (width != 0 && height != 0) ? Math.round(outputWidth / aspectRatio) : Math.round(videoHeight);
+        final int outputWidth = (width != 0 && height != 0) ? height : videoWidth;
+        final int outputHeight = (width != 0 && height != 0) ? width : videoHeight;
         Log.d(TAG, "video outputWidth x outputHeight = " + outputWidth + "x" + outputHeight);
 
         switch(outputType) {
@@ -238,8 +245,12 @@ public class VideoEditor extends CordovaPlugin {
                     Clip clipIn = new Clip(videoSrcPath);
                     Clip clipOut = new Clip(outputFilePath);
                     clipOut.videoCodec = "libx264";
-                    clipOut.width = outputWidth;
-                    clipOut.height = outputHeight;
+                    if (maintainAspectRatio) {
+                        clipOut.videoFilter = "scale=" + outputWidth + ":-1";
+                    } else {
+                        clipOut.width = outputWidth;
+                        clipOut.height = outputHeight;
+                    }
                     clipOut.videoFps = Integer.toString(fps); // tailor this to your needs
                     clipOut.videoBitrate = videoBitrate; // 512 kbps - tailor this to your needs
                     clipOut.audioChannels = audioChannels;
@@ -397,8 +408,10 @@ public class VideoEditor extends CordovaPlugin {
                                 Log.d(TAG, "PluginResult error: " + e);
                             }
                         }
+
                         @Override
-                        public void processComplete(int exitValue) {}
+                        public void processComplete(int exitValue) {
+                        }
                     });
 
                     Log.d(TAG, "ffmpeg finished");
@@ -536,6 +549,78 @@ public class VideoEditor extends CordovaPlugin {
                 }
             }
         });
+    }
+
+    /**
+     * getVideoInfo
+     *
+     * Transcodes a video
+     *
+     * ARGUMENTS
+     * =========
+     *
+     * fileUri:      - path to input video
+     *
+     * RESPONSE
+     * ========
+     *
+     * width         - width of the video
+     * height        - height of the video
+     * orientation   - orientation of the video
+     * duration      - duration of the video (in seconds)
+     * size          - size of the video (in bytes)
+     * bitrate       - bitrate of the video (in bits per second)
+     *
+     * @param JSONArray args
+     * @return void
+     */
+    private void getVideoInfo(JSONArray args) throws JSONException, IOException {
+        Log.d(TAG, "getVideoInfo firing");
+
+        JSONObject options = args.optJSONObject(0);
+        Log.d(TAG, "options: " + options.toString());
+
+        File inFile = this.resolveLocalFileSystemURI(options.getString("fileUri"));
+        if (!inFile.exists()) {
+            Log.d(TAG, "input file does not exist");
+            callback.error("input video does not exist.");
+            return;
+        }
+
+        String videoSrcPath = inFile.getAbsolutePath();
+        Log.d(TAG, "videoSrcPath: " + videoSrcPath);
+
+        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+        mmr.setDataSource(videoSrcPath);
+        float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+        float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
+
+        String orientation;
+        if (Build.VERSION.SDK_INT >= 17) {
+            String mmrOrientation = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+            Log.d(TAG, "mmrOrientation: " + mmrOrientation); // 0, 90, 180, or 270
+
+            if (mmrOrientation == "0" || mmrOrientation == "180") {
+                orientation = "portrait";
+            } else {
+                orientation = "landscape";
+            }
+        } else {
+            orientation = (videoWidth < videoHeight) ? "portrait" : "landscape";
+        }
+
+        double duration = Double.parseDouble(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)) / 1000.0;
+        String bitrate = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+
+        JSONObject response = new JSONObject();
+        response.put("width", videoWidth);
+        response.put("height", videoHeight);
+        response.put("orientation", orientation);
+        response.put("duration", duration);
+        response.put("size", inFile.length());
+        response.put("bitrate", bitrate);
+
+        callback.success(response);
     }
 
     /**

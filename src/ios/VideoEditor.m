@@ -307,7 +307,7 @@
  * height        - height of the video
  * orientation   - orientation of the video
  * duration      - duration of the video (in seconds)
- * size          - size of the video
+ * size          - size of the video (in bytes)
  * bitrate       - bitrate of the video (in bits per second)
  *
  * @param CDVInvokedUrlCommand command
