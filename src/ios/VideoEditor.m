@@ -23,17 +23,18 @@
  * ARGUMENTS
  * =========
  *
- * fileUri          - path to input video
- * outputFileName   - output file name
- * quality          - transcode quality
- * outputFileType   - output file type
- * saveToLibrary    - save to gallery
- * width            - width for the output video
- * height           - height for the output video
- * videoBitrate     - video bitrate for the output video in bits
- * audioChannels    - number of audio channels for the output video
- * audioSampleRate  - sample rate for the audio (samples per second)
- * audioBitrate     - audio bitrate for the output video in bits
+ * fileUri              - path to input video
+ * outputFileName       - output file name
+ * quality              - transcode quality
+ * outputFileType       - output file type
+ * saveToLibrary        - save to gallery
+ * maintainAspectRatio  - make the output aspect ratio match the input video
+ * width                - width for the output video
+ * height               - height for the output video
+ * videoBitrate         - video bitrate for the output video in bits
+ * audioChannels        - number of audio channels for the output video
+ * audioSampleRate      - sample rate for the audio (samples per second)
+ * audioBitrate         - audio bitrate for the output video in bits
  *
  * RESPONSE
  * ========
@@ -57,6 +58,7 @@
     BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? [[options objectForKey:@"optimizeForNetworkUse"] intValue] : NO;
     BOOL saveToPhotoAlbum = [options objectForKey:@"saveToLibrary"] ? [[options objectForKey:@"saveToLibrary"] boolValue] : YES;
     //float videoDuration = [[options objectForKey:@"duration"] floatValue];
+    BOOL maintainAspectRatio = [options objectForKey:@"maintainAspectRatio"] ? [[options objectForKey:@"maintainAspectRatio"] boolValue] : YES;
     float width = [[options objectForKey:@"width"] floatValue];
     float height = [[options objectForKey:@"height"] floatValue];
     int videoBitrate = ([options objectForKey:@"videoBitrate"]) ? [[options objectForKey:@"videoBitrate"] intValue] : 1000000; // default to 1 megabit
@@ -110,20 +112,28 @@
 
     float videoWidth = mediaSize.width;
     float videoHeight = mediaSize.height;
-    float aspectRatio = videoWidth / videoHeight;
+    int newWidth;
+    int newHeight;
 
-    // for some portrait videos ios gives the wrong width and height, this fixes that
-    NSString *videoOrientation = [self getOrientationForTrack:avAsset];
-    if ([videoOrientation isEqual: @"portrait"]) {
-        if (videoWidth > videoHeight) {
-            videoWidth = mediaSize.height;
-            videoHeight = mediaSize.width;
-            aspectRatio = videoWidth / videoHeight;
+    if (maintainAspectRatio) {
+        float aspectRatio = videoWidth / videoHeight;
+
+        // for some portrait videos ios gives the wrong width and height, this fixes that
+        NSString *videoOrientation = [self getOrientationForTrack:avAsset];
+        if ([videoOrientation isEqual: @"portrait"]) {
+            if (videoWidth > videoHeight) {
+                videoWidth = mediaSize.height;
+                videoHeight = mediaSize.width;
+                aspectRatio = videoWidth / videoHeight;
+            }
         }
-    }
 
-    int newWidth = (width && height) ? height * aspectRatio : videoWidth;
-    int newHeight = (width && height) ? newWidth / aspectRatio : videoHeight;
+        newWidth = (width && height) ? height * aspectRatio : videoWidth;
+        newHeight = (width && height) ? newWidth / aspectRatio : videoHeight;
+    } else {
+        newWidth = (width && height) ? width : videoWidth;
+        newHeight = (width && height) ? height : videoHeight;
+    }
 
     NSLog(@"input videoWidth: %f", videoWidth);
     NSLog(@"input videoHeight: %f", videoHeight);
