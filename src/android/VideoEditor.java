@@ -610,7 +610,7 @@ public class VideoEditor extends CordovaPlugin {
         }
 
         double duration = Double.parseDouble(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)) / 1000.0;
-        String bitrate = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE);
+        long bitrate = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE));
 
         JSONObject response = new JSONObject();
         response.put("width", videoWidth);
