@@ -37,6 +37,7 @@ VideoEditor.transcodeVideo(
         width: 640, // optional, see note below on width and height
         height: 640, // optional, see notes below on width and height
         videoBitrate: 1000000, // optional, bitrate in bits, defaults to 1 megabit (1000000)
+        fps: 24, // optional (android only), defaults to 24
         audioChannels: 2, // optional, number of audio channels, defaults to 2
         audioSampleRate: 44100, // optional, sample rate for the audio, defaults to 44100
         audioBitrate: 128000, // optional, audio bitrate for the video in bits, defaults to 128 kilobits (128000)
