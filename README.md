@@ -5,6 +5,7 @@ This is a cordova plugin to assist in several video editing tasks such as:
 * Transcoding
 * Trimming
 * Creating thumbnails from a video file (now at a specific time in the video)
+* Getting info on a video - width, height, orientation, duration, size, & bitrate.
 
 After looking at an article on [How Vine Satisfied Its Need for Speed](http://www.technologyreview.com/view/510511/how-vine-satisfies-its-need-for-speed/), it was clear Cordova/Phonegap needed a way to modify videos to be faster for app's that need that speed.
 
@@ -18,10 +19,7 @@ cordova plugin add cordova-plugin-video-editor
 
 ## Usage
 
-### Transcode
-
-#### Windows Quirks
-Windows does not support any of the optional parameters at this time. Specifying them will not cause an error but, there is no functionality behind them.
+### Transcode a video
 
 ```javascript
 // parameters passed to transcodeVideo
@@ -31,24 +29,38 @@ VideoEditor.transcodeVideo(
     {
         fileUri: 'file-uri-here', // the path to the video on the device
         outputFileName: 'output-name', // the file name for the transcoded video
-        quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
         outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
         optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
-        duration: 20, // optional, specify duration in seconds from start of video
         saveToLibrary: true, // optional, defaults to true
         deleteInputFile: false, // optional (android only), defaults to false
+        maintainAspectRatio: true, // optional, defaults to true
+        width: 640, // optional, see note below on width and height
+        height: 640, // optional, see notes below on width and height
+        videoBitrate: 1000000, // optional, bitrate in bits, defaults to 1 megabit (1000000)
+        audioChannels: 2, // optional, number of audio channels, defaults to 2
+        audioSampleRate: 44100, // optional, sample rate for the audio, defaults to 44100
+        audioBitrate: 128000, // optional, audio bitrate for the video in bits, defaults to 128 kilobits (128000)
         progress: function(info) {} // optional, see docs on progress
     }
-)
+);
 ```
+#### A note on width and height used by transcodeVideo
+I recommend setting `maintainAspectRatio` to true.  When this option is true you can provide any width/height and the height provided will be used to calculate the new width for the output video.  If you set `maintainAspectRatio` false there is a good chance you'll end up with videos that are stretched and/or distorted.  Here is the simplified formula used on iOS when `maintainAspectRatio` is true -
+```objective-c
+aspectRatio = videoWidth / videoHeight;
+outputWidth = height * aspectRatio;
+outputHeight = outputWidth / aspectRatio;
+```
+
+Android uses the ffmpeg scale filter like this `ffmpeg -i input.mp4 -vf scale:640:-1 output.mp4`.  This will set the width of the output video to 640 pixels and will calculate the height of the output video according to the aspect ratio of the input video.
+
+If you don't provide width and height to `transcodeVideo` the output video will have the same dimensions as the input video.
+
+#### transcodeVideo example -
 ```javascript
 // options used with transcodeVideo function
+// VideoEditorOptions is global, no need to declare it
 var VideoEditorOptions = {
-    Quality: {
-        HIGH_QUALITY: 0,
-        MEDIUM_QUALITY: 1,
-        LOW_QUALITY: 2
-    },
     OptimizeForNetworkUse: {
         NO: 0,
         YES: 1
@@ -86,10 +98,19 @@ function videoCaptureSuccess(mediaFiles) {
         {
             fileUri: file.fullPath,
             outputFileName: videoFileName,
-            quality: VideoEditorOptions.Quality.MEDIUM_QUALITY,
             outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
             optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
-            duration: 20
+            saveToLibrary: true,
+            maintainAspectRatio: true,
+            width: 640,
+            height: 640,
+            videoBitrate: 1000000, // 1 megabit
+            audioChannels: 2,
+            audioSampleRate: 44100,
+            audioBitrate: 128000, // 128 kilobits
+            progress: function(info) {
+                console.log('transcodeVideo progress callback, info: ' + info);
+            }
         }
     );
 }
@@ -103,6 +124,9 @@ function videoTranscodeError(err) {
 	console.log('videoTranscodeError, err: ' + err);
 }
 ```
+
+#### Windows Quirks
+Windows does not support any of the optional parameters at this time. Specifying them will not cause an error but, there is no functionality behind them.
 
 ### Trim a Video
 ```javascript
@@ -128,7 +152,7 @@ function trimFail(err) {
 }
 ```
 
-### Create JPEG Image From Video
+### Create a JPEG thumbnail from a video
 ```javascript
 VideoEditor.createThumbnail(
     success, // success cb
@@ -141,7 +165,7 @@ VideoEditor.createThumbnail(
         height: 480, // optional, height of the thumbnail
         quality: 100 // optional, quality of the thumbnail (between 1 and 100)
     }
-)
+);
 // atTime will default to 0 if not provided
 // width and height will be the same as the video input if they are not provided
 // quality will default to 100 if not provided
@@ -170,14 +194,14 @@ function videoCaptureSuccess(mediaFiles) {
         createThumbnailSuccess,
         createThumbnailError,
         {
-            fileUri: mediaFile.fullPath,
+            fileUri: file.fullPath,
             outputFileName: videoFileName,
             atTime: 2,
             width: 320,
             height: 480,
             quality: 100
         }
-    )
+    );
 }
 
 function createThumbnailSuccess(result) {
@@ -188,6 +212,40 @@ function createThumbnailSuccess(result) {
 
 #### A note on width and height used by createThumbnail
 The aspect ratio of the thumbnail created will match that of the video input.  This means you may not get exactly the width and height dimensions you give to `createThumbnail` for the jpeg.  This for your convenience but let us know if it is a problem.  I am considering adding a `maintainAspectRatio` option to `createThumbnail` (and when this option is false you might have stretched, square thumbnails :laughing:).
+
+### Get info on a video (width, height, orientation, duration, size, & bitrate)
+```javascript
+VideoEditor.getVideInfo(
+    success, // success cb
+    error, // error cb
+    {
+        fileUri: 'file-uri-here', // the path to the video on the device
+    }
+);
+```
+
+```javascript
+VideoEditor.getVideInfo(
+    getVideoInfoSuccess,
+    getVideoInfoError,
+    {
+        fileUri: file.fullPath
+    }
+);
+
+function getVideoInfoSuccess(info) {
+    console.log('getVideoInfoSuccess, info: ' + JSON.stringify(info, null, 2));
+    // info is a JSON object with the following properties -
+    {
+        width: 1920,
+        height: 1080,
+        orientation: 'landscape', // will be portrait or landscape
+        duration: 3.541, // duration in seconds
+        size: 6830126, // size of the video in bytes
+        bitrate: 15429777 // bitrate of the video in bits per second
+    }
+}
+```
 
 ### Execute an FFMPEG command (Android only)
 [FFMPEG documentation](https://ffmpeg.org/ffmpeg.html)
