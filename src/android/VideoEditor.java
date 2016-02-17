@@ -246,7 +246,7 @@ public class VideoEditor extends CordovaPlugin {
                     Clip clipOut = new Clip(outputFilePath);
                     clipOut.videoCodec = "libx264";
                     if (maintainAspectRatio) {
-                        clipOut.videoFilter = "scale=" + outputWidth + ":-1";
+                        clipOut.videoFilter = "scale=" + outputWidth + ":-2";
                     } else {
                         clipOut.width = outputWidth;
                         clipOut.height = outputHeight;
