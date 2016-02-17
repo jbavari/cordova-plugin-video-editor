@@ -53,7 +53,7 @@ outputWidth = height * aspectRatio;
 outputHeight = outputWidth / aspectRatio;
 ```
 
-Android uses the ffmpeg scale filter like this `ffmpeg -i input.mp4 -vf scale:640:-1 output.mp4`.  This will set the width of the output video to 640 pixels and will calculate the height of the output video according to the aspect ratio of the input video.
+Android uses the ffmpeg scale filter like this `ffmpeg -i input.mp4 -vf scale:640:-2 output.mp4`.  This will set the width of the output video to 640 pixels and will calculate the height of the output video according to the aspect ratio of the input video.
 
 If you don't provide width and height to `transcodeVideo` the output video will have the same dimensions as the input video.
 
