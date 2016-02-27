@@ -52,7 +52,8 @@
         options = [NSDictionary dictionary];
     }
 
-    NSString *assetPath = [options objectForKey:@"fileUri"];
+    NSString *inputFilePath = [options objectForKey:@"fileUri"];
+    NSURL *inputFileURL = [self getURLFromFilePath:inputFilePath];
     NSString *videoFileName = [options objectForKey:@"outputFileName"];
     CDVOutputFileType outputFileType = ([options objectForKey:@"outputFileType"]) ? [[options objectForKey:@"outputFileType"] intValue] : MPEG4;
     BOOL optimizeForNetworkUse = ([options objectForKey:@"optimizeForNetworkUse"]) ? [[options objectForKey:@"optimizeForNetworkUse"] intValue] : NO;
@@ -89,18 +90,15 @@
             break;
     }
 
-    // remove file:// from the assetPath if it is there
-    assetPath = [[assetPath stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
-
     // check if the video can be saved to photo album before going further
-    if (saveToPhotoAlbum && !UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(assetPath))
+    if (saveToPhotoAlbum && !UIVideoAtPathIsCompatibleWithSavedPhotosAlbum([inputFileURL path]))
     {
         NSString *error = @"Video cannot be saved to photo album";
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error ] callbackId:command.callbackId];
         return;
     }
 
-    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:assetPath] options:nil];
+    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:inputFileURL options:nil];
 
     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
     NSString *outputPath = [NSString stringWithFormat:@"%@/%@%@", cacheDir, videoFileName, outputExtension];
@@ -332,13 +330,12 @@
         options = [NSDictionary dictionary];
     }
 
-    NSString *assetPath = [options objectForKey:@"fileUri"];
-    // remove file:// from the assetPath if it is there
-    assetPath = [[assetPath stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
+    NSString *filePath = [options objectForKey:@"fileUri"];
+    NSURL *fileURL = [self getURLFromFilePath:filePath];
 
-    unsigned long long size = [[NSFileManager defaultManager] attributesOfItemAtPath:assetPath error:nil].fileSize;
+    unsigned long long size = [[NSFileManager defaultManager] attributesOfItemAtPath:[fileURL path] error:nil].fileSize;
 
-    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:assetPath] options:nil];
+    AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
 
     NSArray *tracks = [avAsset tracksWithMediaType:AVMediaTypeVideo];
     AVAssetTrack *track = [tracks objectAtIndex:0];
@@ -398,13 +395,11 @@
     if ([options isKindOfClass:[NSNull class]]) {
         options = [NSDictionary dictionary];
     }
-    NSString *inputFile = [options objectForKey:@"fileUri"];
+    NSString *inputFilePath = [options objectForKey:@"fileUri"];
+    NSURL *inputFileURL = [self getURLFromFilePath:inputFilePath];
     float trimStart = [[options objectForKey:@"trimStart"] floatValue];
     float trimEnd = [[options objectForKey:@"trimEnd"] floatValue];
     NSString *outputName = [options objectForKey:@"outputFileName"];
-
-    // remove file:// from the inputFile path if it is there
-    inputFile = [[inputFile stringByReplacingOccurrencesOfString:@"file://" withString:@""] mutableCopy];
 
     NSFileManager *fileMgr = [NSFileManager defaultManager];
     NSString *cacheDir = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
@@ -417,18 +412,18 @@
     }
     NSString *videoOutput = [videoDir stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", outputName, @"mp4"]];
 
-    NSLog(@"[Trim]: inputFile path: %@", inputFile);
+    NSLog(@"[Trim]: inputFilePath: %@", inputFilePath);
     NSLog(@"[Trim]: outputPath: %@", videoOutput);
 
     // run in background
     [self.commandDelegate runInBackground:^{
 
-        AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:inputFile] options:nil];
+        AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:inputFileURL options:nil];
 
         AVAssetExportSession *exportSession = [[AVAssetExportSession alloc]initWithAsset:avAsset presetName: AVAssetExportPresetHighestQuality];
         exportSession.outputURL = [NSURL fileURLWithPath:videoOutput];
         exportSession.outputFileType = AVFileTypeQuickTimeMovie;
-        exportSession.shouldOptimizeForNetworkUse = NO;
+        exportSession.shouldOptimizeForNetworkUse = YES;
 
         int32_t preferredTimeScale = 600;
         CMTime startTime = CMTimeMakeWithSeconds(trimStart, preferredTimeScale);
@@ -560,6 +555,17 @@
         return @"portrait";
     else
         return @"portrait";
+}
+
+- (NSURL*)getURLFromFilePath:(NSString*)filePath
+{
+    if ([filePath containsString:@"assets-library://"]) {
+        return [NSURL URLWithString:[filePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    } else if ([filePath containsString:@"file://"]) {
+        return [NSURL URLWithString:[filePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    }
+
+    return [NSURL fileURLWithPath:[filePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
 }
 
 static dispatch_time_t getDispatchTimeFromSeconds(float seconds) {

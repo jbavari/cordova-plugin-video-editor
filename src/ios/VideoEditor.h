@@ -12,13 +12,6 @@
 
 #import <Cordova/CDV.h>
 
-enum CDVQualityType {
-    HighQuality = 0,
-    MediumQuality = 1,
-    LowQuality = 2,
-};
-typedef NSUInteger CDVQualityType;
-
 enum CDVOutputFileType {
     M4V = 0,
     MPEG4 = 1,
