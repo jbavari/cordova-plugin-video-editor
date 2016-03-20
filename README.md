@@ -216,7 +216,7 @@ The aspect ratio of the thumbnail created will match that of the video input.  T
 
 ### Get info on a video (width, height, orientation, duration, size, & bitrate)
 ```javascript
-VideoEditor.getVideInfo(
+VideoEditor.getVideoInfo(
     success, // success cb
     error, // error cb
     {
@@ -226,7 +226,7 @@ VideoEditor.getVideInfo(
 ```
 
 ```javascript
-VideoEditor.getVideInfo(
+VideoEditor.getVideoInfo(
     getVideoInfoSuccess,
     getVideoInfoError,
     {
