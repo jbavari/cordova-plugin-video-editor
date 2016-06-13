@@ -1,0 +1,16 @@
+
+repositories{
+    jcenter()
+    maven { url "https://jitpack.io" }
+}
+
+dependencies {
+    compile 'com.github.ergovia-mobile:android-transcoder:v0.1.10R_ergovia'
+}
+
+android {
+    packagingOptions {
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+    }
+}

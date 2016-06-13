@@ -1,8 +1,6 @@
 package org.apache.cordova.videoeditor;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
@@ -10,17 +8,14 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.ArrayList;
 
+import android.graphics.Bitmap;
+import android.graphics.Matrix;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
-import org.ffmpeg.android.ShellUtils;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import org.ffmpeg.android.FfmpegController;
-import org.ffmpeg.android.Clip;
-import org.ffmpeg.android.ShellUtils.ShellCallback;
 
 import android.content.ContentUris;
 import android.content.Context;
@@ -37,6 +32,9 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import net.ypresto.androidtranscoder.MediaTranscoder;
+import net.ypresto.androidtranscoder.format.MediaFormatStrategyPresets;
+
 /**
  * VideoEditor plugin for Android
  * Created by Ross Martin 2-2-15
@@ -46,15 +44,6 @@ public class VideoEditor extends CordovaPlugin {
     private static final String TAG = "VideoEditor";
 
     private CallbackContext callback;
-
-    private static final int HighQuality = 0;
-    private static final int MediumQuality = 1;
-    private static final int LowQuality = 2;
-
-    private static final int M4V = 0;
-    private static final int MPEG4 = 1;
-    private static final int M4A = 2;
-    private static final int QUICK_TIME = 3;
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -69,13 +58,6 @@ public class VideoEditor extends CordovaPlugin {
                 callback.error(e.toString());
             }
             return true;
-        } else if (action.equals("trim")) {
-            try {
-                this.trim(args);
-            } catch (IOException e) {
-                callback.error(e.toString());
-            }
-            return true;
         } else if (action.equals("createThumbnail")) {
             try {
                 this.createThumbnail(args);
@@ -86,13 +68,6 @@ public class VideoEditor extends CordovaPlugin {
         } else if (action.equals("getVideoInfo")) {
             try {
                 this.getVideoInfo(args);
-            } catch (IOException e) {
-                callback.error(e.toString());
-            }
-            return true;
-        } else if (action.equals("execFFMPEG")) {
-            try {
-                this.execFFMPEG(args);
             } catch (IOException e) {
                 callback.error(e.toString());
             }
@@ -112,18 +87,13 @@ public class VideoEditor extends CordovaPlugin {
      *
      * fileUri              - path to input video
      * outputFileName       - output file name
-     * quality              - transcode quality
-     * outputFileType       - output file type
      * saveToLibrary        - save to gallery
      * deleteInputFile      - optionally remove input file
-     * maintainAspectRatio  - maintain the aspect ratio of the input video
-     * width                - width for the output video
-     * height               - height for the output video
+     * shorterLength        - shorter length for the output video
      * fps                  - fps the video
      * videoBitrate         - video bitrate for the output video in bits
-     * audioChannels        - number of audio channels for the output video
-     * audioSampleRate      - sample rate for the audio (samples per second)
-     * audioBitrate         - audio bitrate for the output video in bits
+     * trimStart            - time to start trimming
+     * trimEnd              - time to end trimming
      *
      * RESPONSE
      * ========
@@ -151,46 +121,16 @@ public class VideoEditor extends CordovaPlugin {
                 "outputFileName",
                 new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
-        final int outputType = options.optInt("outputFileType", MPEG4);
+
         final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
-        final boolean maintainAspectRatio = options.optBoolean("maintainAspectRatio", true);
-        int width = options.optInt("width", 0);
-        int height = options.optInt("height", 0);
+        final int shorterLength = options.optInt("shorterLength", 720);
         final int fps = options.optInt("fps", 24);
-        final int videoBitrate = options.optInt("videoBitrate", 1000000) / 1000; // default to 1 megabit
-        final int audioChannels = options.optInt("audioChannels", 2);
-        final int audioSampleRate = options.optInt("audioSampleRate", 44100);
-        final int audioBitrate = options.optInt("audioBitrate", 128000) / 1000; // default to 128 kilobits
+        final int videoBitrate = options.optInt("videoBitrate", 1000000); // default to 1 megabit
+        final long videoDuration = options.optLong("videoDuration", 0) * 1000 * 1000;
 
         Log.d(TAG, "videoSrcPath: " + videoSrcPath);
 
-        String outputExtension;
-
-        // get the videos aspect ratio and use the provided width and height to scale it without losing aspect ratio
-        MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-        mmr.setDataSource(videoSrcPath);
-        int videoWidth = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-        int videoHeight = Integer.parseInt(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-        Log.d(TAG, "videoWidth x videoHeight = " + videoWidth + "x" + videoHeight);
-        final int outputWidth = (width != 0 && height != 0) ? height : videoWidth;
-        final int outputHeight = (width != 0 && height != 0) ? width : videoHeight;
-        Log.d(TAG, "video outputWidth x outputHeight = " + outputWidth + "x" + outputHeight);
-
-        switch(outputType) {
-            case QUICK_TIME:
-                outputExtension = ".mov";
-                break;
-            case M4A:
-                outputExtension = ".m4a";
-                break;
-            case M4V:
-                outputExtension = ".m4v";
-                break;
-            case MPEG4:
-            default:
-                outputExtension = ".mp4";
-                break;
-        }
+        final String outputExtension = ".mp4";
 
         final Context appContext = cordova.getActivity().getApplicationContext();
         final PackageManager pm = appContext.getPackageManager();
@@ -208,220 +148,99 @@ public class VideoEditor extends CordovaPlugin {
 
         if (saveToLibrary) {
             mediaStorageDir = new File(
-                Environment.getExternalStorageDirectory() + "/Movies",
-                appName
+                    Environment.getExternalStorageDirectory() + "/Movies",
+                    appName
             );
         } else {
-            mediaStorageDir = new File(appContext.getExternalCacheDir().getPath());
+            mediaStorageDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + cordova.getActivity().getPackageName() + "/files/files/videos");
         }
 
         if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdir()) {
+            if (!mediaStorageDir.mkdirs()) {
                 callback.error("Can't access or make Movies directory");
                 return;
             }
         }
 
-        final String outputFilePath =  new File(
-            mediaStorageDir.getPath(),
-            "VID_" + outputFileName + outputExtension
+        final String outputFilePath = new File(
+                mediaStorageDir.getPath(),
+                outputFileName + outputExtension
         ).getAbsolutePath();
 
         Log.d(TAG, "outputFilePath: " + outputFilePath);
 
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
+
                 try {
-                    File tempFile = File.createTempFile("ffmpeg", null, appContext.getCacheDir());
-                    FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
 
-                    Clip clipIn = new Clip(videoSrcPath);
-                    Clip clipOut = new Clip(outputFilePath);
-                    clipOut.videoCodec = "libx264";
-                    if (maintainAspectRatio) {
-                        clipOut.videoFilter = "scale=" + outputWidth + ":-2";
-                    } else {
-                        clipOut.width = outputWidth;
-                        clipOut.height = outputHeight;
-                    }
-                    clipOut.videoFps = Integer.toString(fps); // tailor this to your needs
-                    clipOut.videoBitrate = videoBitrate; // 512 kbps - tailor this to your needs
-                    clipOut.audioChannels = audioChannels;
-                    clipOut.audioBitrate = audioBitrate;
-                    clipOut.audioSampleRate = audioSampleRate;
+                    FileInputStream fin = new FileInputStream(inFile);
 
-                    ffmpegController.processVideo(clipIn, clipOut, true, new ShellCallback() {
+                    MediaTranscoder.Listener listener = new MediaTranscoder.Listener() {
                         @Override
-                        public void shellOut(String shellLine) {
-                            Log.d(TAG, "shellOut: " + shellLine);
+                        public void onTranscodeProgress(double progress) {
+                            Log.d(TAG, "transcode runnding " + progress);
+
+                            JSONObject jsonObj = new JSONObject();
                             try {
-                                JSONObject jsonObj = new JSONObject();
-                                jsonObj.put("progress", shellLine.toString());
-                                PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
-                                progressResult.setKeepCallback(true);
-                                callback.sendPluginResult(progressResult);
+                                jsonObj.put("progress", progress);
                             } catch (JSONException e) {
-                                Log.d(TAG, "PluginResult error: " + e);
+                                e.printStackTrace();
                             }
+
+                            PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
+                            progressResult.setKeepCallback(true);
+                            callback.sendPluginResult(progressResult);
                         }
+
                         @Override
-                        public void processComplete(int exitValue) {}
-                    });
+                        public void onTranscodeCompleted() {
 
-                    Log.d(TAG, "ffmpeg finished");
+                            File outFile = new File(outputFilePath);
+                            if (!outFile.exists()) {
+                                Log.d(TAG, "outputFile doesn't exist!");
+                                callback.error("an error ocurred during transcoding");
+                                return;
+                            }
 
-                    File outFile = new File(outputFilePath);
-                    if (!outFile.exists()) {
-                        Log.d(TAG, "outputFile doesn't exist!");
-                        callback.error("an error ocurred during transcoding");
-                        return;
-                    }
+                            // make the gallery display the new file if saving to library
+                            if (saveToLibrary) {
+                                Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                                scanIntent.setData(Uri.fromFile(inFile));
+                                scanIntent.setData(Uri.fromFile(outFile));
+                                appContext.sendBroadcast(scanIntent);
+                            }
 
-                    // make the gallery display the new file if saving to library
-                    if (saveToLibrary) {
-                        Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                        scanIntent.setData(Uri.fromFile(inFile));
-                        scanIntent.setData(Uri.fromFile(outFile));
-                        appContext.sendBroadcast(scanIntent);
-                    }
+                            if (deleteInputFile) {
+                                inFile.delete();
+                            }
 
-                    if (deleteInputFile) {
-                        inFile.delete();
-                    }
+                            callback.success(outputFilePath);
+                        }
 
-                    callback.success(outputFilePath);
+                        @Override
+                        public void onTranscodeCanceled() {
+                            callback.error("transcode canceled, why?");
+                            Log.d(TAG, "transcode canceled");
+                        }
+
+                        @Override
+                        public void onTranscodeFailed(Exception exception) {
+                            callback.error("an error ocurred during transcoding");
+                            Log.d(TAG, "transcode exception", exception);
+                        }
+                    };
+
+                    MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
+                            new CustomAndroidFormatStrategy(videoBitrate, fps, shorterLength), listener, videoDuration);
+
                 } catch (Throwable e) {
                     Log.d(TAG, "transcode exception ", e);
                     callback.error(e.toString());
                 }
+
             }
         });
-    }
-
-    /**
-     * trim
-     *
-     * Performs a fast-trim operation on an input clip.
-     *
-     * ARGUMENTS
-     * =========
-     *
-     * fileUri      - path to input video
-     * trimStart      - time to start trimming
-     * trimEnd        - time to end trimming
-     * outputFileName - output file name
-     *
-     * RESPONSE
-     * ========
-     *
-     * outputFilePath - path to output file
-     *
-     * @param JSONArray args
-     * @return void
-     */
-    private void trim(JSONArray args) throws JSONException, IOException {
-        Log.d(TAG, "trim firing");
-
-        // parse arguments
-        JSONObject options = args.optJSONObject(0);
-
-        Log.d(TAG, "options: " + options.toString());
-
-        // outputFileName
-        final String outputFileName = options.optString(
-            "outputFileName",
-            new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
-        );
-        final String inputFilePath = options.getString("fileUri");
-
-        // outputFileExt
-        final String outputFileExt = this.getFileExt(inputFilePath);
-
-        // inputFile
-        final File inFile = this.resolveLocalFileSystemURI(inputFilePath);
-        if (!inFile.exists()) {
-            Log.d(TAG, "input file does not exist");
-            callback.error("input video does not exist.");
-            return;
-        }
-
-        // trim points
-        double trim0 = options.optDouble("trimStart");
-        final String trimstart = this.durationFormat(trim0);
-        double trimend = options.getDouble("trimEnd");
-        trimend = trimend - trim0;
-        if(trimend == 0){
-            callback.error("trim: failed to trim video; duration is 0");
-            return;
-        }
-        final String duration = this.durationFormat(trimend);
-
-        // tempDir
-        final Context appContext = cordova.getActivity().getApplicationContext();
-        final File tempDir = this.getTempDir(appContext, outputFileExt);
-
-        // outputFilePath
-        final File outputFile = new File(tempDir, outputFileName + outputFileExt);
-        final String outputFilePath = outputFile.getAbsolutePath();
-
-        // start task
-        cordova.getThreadPool().execute(new Runnable() {
-            public void run() {
-                try {
-                    FfmpegController ffmpegController = new FfmpegController(appContext, tempDir);
-
-                    // ffmpeg -ss [start1] -i [INPUT] -ss [start2] -t [duration] -c copy [OUTPUT]
-                    ArrayList<String> cmd = new ArrayList<String>();
-                    cmd.add(ffmpegController.getBinaryPath());
-                    // fast, inaccurate trim
-                    cmd.add("-ss");
-                    cmd.add(trimstart);
-                    // input
-                    cmd.add("-i");
-                    cmd.add(inFile.getCanonicalPath());
-                    // duration
-                    cmd.add("-t");
-                    cmd.add(duration);
-                    // copy audio, video
-                    cmd.add("-c");
-                    cmd.add("copy");
-
-                    cmd.add(outputFilePath);
-                    ffmpegController.execFFMPEG(cmd, new ShellUtils.ShellCallback() {
-                        @Override
-                        public void shellOut(String shellLine) {
-                            Log.d(TAG, "shellOut: " + shellLine);
-                            try {
-                                JSONObject jsonObj = new JSONObject();
-                                jsonObj.put("progress", shellLine.toString());
-                                PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
-                                progressResult.setKeepCallback(true);
-                                callback.sendPluginResult(progressResult);
-                            } catch (JSONException e) {
-                                Log.d(TAG, "PluginResult error: " + e);
-                            }
-                        }
-
-                        @Override
-                        public void processComplete(int exitValue) {
-                        }
-                    });
-
-                    Log.d(TAG, "ffmpeg finished");
-                    if (!outputFile.exists()) {
-                        Log.d(TAG, "outputFile doesn't exist!");
-                        callback.error("trim: failed to trim video");
-                        return;
-                    }
-
-                    callback.success(outputFilePath);
-                } catch (Throwable e) {
-                    Log.d(TAG, "transcode exception ", e);
-                    callback.error(e.toString());
-                }
-            }
-        });
-
     }
 
     /**
@@ -434,8 +253,7 @@ public class VideoEditor extends CordovaPlugin {
      * fileUri        - input file path
      * outputFileName - output file name
      * atTime         - location in the video to create the thumbnail (in seconds),
-     * width          - width of the thumbnail (optional)
-     * height         - height of the thumbnail (optional)
+     * shorterLength  - shorter length for the output thumbnail (optional)
      * quality        - quality of the thumbnail (optional, between 1 and 100)
      *
      * RESPONSE
@@ -449,6 +267,7 @@ public class VideoEditor extends CordovaPlugin {
     @SuppressWarnings("unused")
     private void createThumbnail(JSONArray args) throws JSONException, IOException {
         Log.d(TAG, "createThumbnail firing");
+
 
         JSONObject options = args.optJSONObject(0);
         Log.d(TAG, "options: " + options.toString());
@@ -466,17 +285,13 @@ public class VideoEditor extends CordovaPlugin {
         }
         final String srcVideoPath = inFile.getAbsolutePath();
         String outputFileName = options.optString(
-            "outputFileName",
-            new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
+                "outputFileName",
+                new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
 
-        final String atTime = options.optString("atTime", "0");
-        final String width = options.optString("width", "");
-        double quality = options.optDouble("quality", 100);
-        // use -q:v to control output quality. full range is a linear scale of 1-31 where a lower value results in a higher quality. 2-5 is a good range to try.
-        double qualityRatio = 32.0 / 100.0;
-        double thumbnailQuality = Math.abs(qualityRatio * quality - 31);
-        final long calculatedThumbnailQuality = Math.round(thumbnailQuality);
+        final long atTime = options.optLong("atTime", 0);
+        final int quality = options.optInt("quality", 100);
+        final int shorterLength = options.optInt("shorterLength", 0);
 
         final Context appContext = cordova.getActivity().getApplicationContext();
         PackageManager pm = appContext.getPackageManager();
@@ -489,57 +304,87 @@ public class VideoEditor extends CordovaPlugin {
         }
         final String appName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
 
-        File tempStoragePath = appContext.getExternalCacheDir();
+        File externalFilesDir =  new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + cordova.getActivity().getPackageName() + "/files/files/videos");
+
+        if (!externalFilesDir.exists()) {
+            if (!externalFilesDir.mkdirs()) {
+                callback.error("Can't access or make Movies directory");
+                return;
+            }
+        }
 
         final File outputFile =  new File(
-            tempStoragePath.getPath(),
-            "PIC_" + outputFileName + ".jpg"
+                externalFilesDir.getPath(),
+                outputFileName + ".jpg"
         );
         final String outputFilePath = outputFile.getAbsolutePath();
 
         // start task
         cordova.getThreadPool().execute(new Runnable() {
             public void run() {
+
+                OutputStream outStream = null;
+
                 try {
-                    File tempFile = File.createTempFile("ffmpeg", null, appContext.getCacheDir());
-                    FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
+                    MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                    mmr.setDataSource(srcVideoPath);
 
-                    ArrayList<String> al = new ArrayList<String>();
-                    al.add(ffmpegController.getBinaryPath());
-                    al.add("-y");
-                    al.add("-ss");
-                    al.add(atTime);
-                    al.add("-i");
-                    al.add(srcVideoPath);
-                    al.add("-vframes");
-                    al.add("1");
-                    al.add("-q:v");
-                    al.add(Long.toString(calculatedThumbnailQuality));
-                    if (!width.isEmpty()) {
-                        al.add("-filter:v");
-                        al.add("scale=" + width + ":-1");
+                    Bitmap bitmap = mmr.getFrameAtTime(atTime);
+
+                    System.out.println(shorterLength);
+
+                    if(shorterLength > 0) {
+
+                        int height = bitmap.getHeight();
+                        int width = bitmap.getWidth();
+
+                        System.out.println("height"+height);
+                        System.out.println("width"+width);
+
+                        if(height > shorterLength || width > shorterLength) {
+
+                            int scaleWidth;
+                            int scaleHeight;
+
+                            if(height > width) {
+                                scaleHeight = Double.valueOf((height * shorterLength)/(double) width).intValue();
+                                scaleWidth = shorterLength;
+                            } else {
+                                scaleHeight = shorterLength;
+                                scaleWidth = Double.valueOf((width * shorterLength)/(double) height).intValue();
+                            }
+
+                            System.out.println("scaleWidth "+scaleWidth);
+                            System.out.println("scaleHeight "+scaleHeight);
+
+                            final Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, scaleWidth, scaleHeight, false);
+                            bitmap.recycle();
+                            bitmap = resizedBitmap;
+
+                        }
+
                     }
-                    al.add(outputFilePath);
 
-
-                    ffmpegController.execFFMPEG(al, new ShellCallback() {
-                        @Override
-                        public void shellOut(String shellLine) {
-                            Log.d(TAG, "shellOut: " + shellLine);
-                        }
-
-                        @Override
-                        public void processComplete(int exitValue) {
-                            Log.d(TAG, "processComplete: " + exitValue);
-                        }
-                    });
-                    Log.d(TAG, "ffmpeg finished");
+                    outStream = new FileOutputStream(outputFile);
+                    bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outStream);
 
                     callback.success(outputFilePath);
+
                 } catch (Throwable e) {
-                    Log.d(TAG, "ffmpeg exception ", e);
+
+                    if(outStream != null) {
+                        try {
+                            outStream.close();
+                        } catch (IOException e1) {
+                            e1.printStackTrace();
+                        }
+                    }
+
+                    Log.d(TAG, "exception on thumbnail creation", e);
                     callback.error(e.toString());
+
                 }
+
             }
         });
     }
@@ -616,77 +461,6 @@ public class VideoEditor extends CordovaPlugin {
         callback.success(response);
     }
 
-    /**
-     * execFFMPEG
-     *
-     * Executes an ffmpeg command
-     *
-     * ARGUMENTS
-     * =========
-     *
-     * cmd - ffmpeg command as a string array
-     *
-     * RESPONSE
-     * ========
-     *
-     * VOID
-     *
-     * @param JSONArray args
-     * @return void
-     */
-    private void execFFMPEG(JSONArray args) throws JSONException, IOException {
-        Log.d(TAG, "execFFMPEG firing");
-
-        // parse arguments
-        JSONObject options = args.optJSONObject(0);
-
-        Log.d(TAG, "options: " + options.toString());
-
-        final JSONArray cmds = options.getJSONArray("cmd");
-        final Context appContext = cordova.getActivity().getApplicationContext();
-
-        // start task
-        cordova.getThreadPool().execute(new Runnable() {
-            public void run() {
-                try {
-                    File tempFile = File.createTempFile("ffmpeg", null, appContext.getCacheDir());
-                    FfmpegController ffmpegController = new FfmpegController(appContext, tempFile);
-
-                    ArrayList<String> al = new ArrayList<String>();
-                    al.add(ffmpegController.getBinaryPath());
-
-                    int cmdArrLength = cmds.length();
-                    for (int i = 0; i < cmdArrLength; i++) {
-                        al.add(cmds.optString(i));
-                    }
-
-                    ffmpegController.execFFMPEG(al, new ShellUtils.ShellCallback() {
-                        @Override
-                        public void shellOut(String shellLine) {
-                            Log.d(TAG, "shellOut: " + shellLine);
-                            try {
-                                JSONObject jsonObj = new JSONObject();
-                                jsonObj.put("progress", shellLine.toString());
-                                PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
-                                progressResult.setKeepCallback(true);
-                                callback.sendPluginResult(progressResult);
-                            } catch (JSONException e) {
-                                Log.d(TAG, "PluginResult error: " + e);
-                            }
-                        }
-                        @Override
-                        public void processComplete(int exitValue) {}
-                    });
-                    Log.d(TAG, "ffmpeg finished");
-
-                    callback.success();
-                } catch (Throwable e) {
-                    Log.d(TAG, "ffmpeg exception ", e);
-                    callback.error(e.toString());
-                }
-            }
-        });
-    }
 
     @SuppressWarnings("deprecation")
     private File resolveLocalFileSystemURI(String url) throws IOException, JSONException {
@@ -807,7 +581,7 @@ public class VideoEditor extends CordovaPlugin {
      * @return The value of the _data column, which is typically a file path.
      */
     public static String getDataColumn(Context context, Uri uri, String selection,
-            String[] selectionArgs) {
+                                       String[] selectionArgs) {
 
         Cursor cursor = null;
         final String column = "_data";
