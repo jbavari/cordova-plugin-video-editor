@@ -89,11 +89,10 @@ public class VideoEditor extends CordovaPlugin {
      * outputFileName       - output file name
      * saveToLibrary        - save to gallery
      * deleteInputFile      - optionally remove input file
-     * shorterLength        - shorter length for the output video
+     * maxWidth             - max width for the output video
      * fps                  - fps the video
      * videoBitrate         - video bitrate for the output video in bits
-     * trimStart            - time to start trimming
-     * trimEnd              - time to end trimming
+     * duration             - max video duration (in seconds?)
      *
      * RESPONSE
      * ========
@@ -123,10 +122,10 @@ public class VideoEditor extends CordovaPlugin {
         );
 
         final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
-        final int shorterLength = options.optInt("shorterLength", 720);
+        final int shorterLength = options.optInt("maxWidth", 960);
         final int fps = options.optInt("fps", 24);
         final int videoBitrate = options.optInt("videoBitrate", 1000000); // default to 1 megabit
-        final long videoDuration = options.optLong("videoDuration", 0) * 1000 * 1000;
+        final long videoDuration = options.optLong("duration", 0) * 1000 * 1000;
 
         Log.d(TAG, "videoSrcPath: " + videoSrcPath);
 
@@ -179,7 +178,7 @@ public class VideoEditor extends CordovaPlugin {
                     MediaTranscoder.Listener listener = new MediaTranscoder.Listener() {
                         @Override
                         public void onTranscodeProgress(double progress) {
-                            Log.d(TAG, "transcode runnding " + progress);
+                            Log.d(TAG, "transcode running " + progress);
 
                             JSONObject jsonObj = new JSONObject();
                             try {
@@ -220,13 +219,13 @@ public class VideoEditor extends CordovaPlugin {
 
                         @Override
                         public void onTranscodeCanceled() {
-                            callback.error("transcode canceled, why?");
+                            callback.error("transcode canceled");
                             Log.d(TAG, "transcode canceled");
                         }
 
                         @Override
                         public void onTranscodeFailed(Exception exception) {
-                            callback.error("an error ocurred during transcoding");
+                            callback.error(exception.toString());
                             Log.d(TAG, "transcode exception", exception);
                         }
                     };
@@ -626,120 +625,6 @@ public class VideoEditor extends CordovaPlugin {
      */
     public static boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
-    }
-
-    /**
-     *
-     * Shotclip Additions
-     *
-     *
-     */
-
-    /**
-     * getOutputFilePath
-     *
-     * Resolves the output file path.
-     *
-     * @param String outputFileName
-     * @param String outputExtension
-     * @param boolean saveToLibrary
-     * @return String
-     */
-    private File getOutputFilePath(String outputFileName, String outputExtension, boolean saveToLibrary) throws JSONException, IOException {
-        final Context appContext = cordova.getActivity().getApplicationContext();
-        final PackageManager pm = appContext.getPackageManager();
-
-        ApplicationInfo ai;
-        try {
-            ai = pm.getApplicationInfo(cordova.getActivity().getPackageName(), 0);
-        } catch (final NameNotFoundException e) {
-            ai = null;
-        }
-        final String appName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
-
-        File mediaStorageDir;
-
-        if (saveToLibrary) {
-            mediaStorageDir = new File(
-                    Environment.getExternalStorageDirectory() + "/Movies",
-                    appName
-            );
-        } else {
-            mediaStorageDir = appContext.getExternalCacheDir();
-        }
-
-        if (!mediaStorageDir.exists()) {
-            if (!mediaStorageDir.mkdirs()) {
-                callback.error("Can't access or make Movies directory");
-                return null;
-            }
-        }
-
-        // outputFile
-        File outputFile = new File(mediaStorageDir.getAbsolutePath(), "VID_" + outputFileName + outputExtension);
-        Log.v(TAG, "outputFilePath: " + outputFile.getAbsolutePath());
-
-        return outputFile;
-    }
-
-    /**
-     * durationFormat
-     *
-     * Formats a double timestamp into a string ready for
-     * use in ffmpeg
-     *
-     * @param double duration
-     * @return void
-     */
-    private String durationFormat(double duration){
-        String res = new String();
-        int hours = (int)(duration/3600f);
-        duration -= (hours*3600);
-        int min = (int)(duration/60f);
-        duration -= (min*60);
-        res =  "0" + String.format(Locale.US, "%s", hours) + ":";
-        res += "0" + String.format(Locale.US, "%s", min) + ":";
-        res += String.format(Locale.US, "%s", duration);
-        return res;
-    }
-
-    /**
-     * getFileExt
-     *
-     * Gets the file extension from a filename
-     *
-     * @param String filename
-     * @return String
-     */
-    private String getFileExt(String filename){
-        try {
-            return filename.substring(filename.lastIndexOf("."));
-
-        }
-        catch (Exception e) {
-            return "";
-        }
-    }
-
-    /**
-     * getTempDir
-     *
-     * Make a temp directory for storing intermediate files.
-     * Named after file type, eg 'mp4', 'ts')
-     *
-     * @param Context appContext
-     * @param String ext
-     * @return File
-     */
-    private File getTempDir(Context appContext, String ext){
-        final File tempDir = new File(appContext.getCacheDir(), ext.substring(1));
-        if(!tempDir.exists()){
-            if (!tempDir.mkdirs()) {
-                callback.error("Can't access or make temporary cache directory");
-                return null;
-            }
-        }
-        return tempDir;
     }
 
 }
