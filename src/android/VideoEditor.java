@@ -251,8 +251,9 @@ public class VideoEditor extends CordovaPlugin {
      * =========
      * fileUri        - input file path
      * outputFileName - output file name
-     * atTime         - location in the video to create the thumbnail (in seconds),
-     * shorterLength  - shorter length for the output thumbnail (optional)
+     * atTime         - location in the video to create the thumbnail (in seconds)
+     * width          - width for the thumbnail (optional)
+     * height         - height for the thumbnail (optional)
      * quality        - quality of the thumbnail (optional, between 1 and 100)
      *
      * RESPONSE
@@ -263,7 +264,6 @@ public class VideoEditor extends CordovaPlugin {
      * @param JSONArray args
      * @return void
      */
-    @SuppressWarnings("unused")
     private void createThumbnail(JSONArray args) throws JSONException, IOException {
         Log.d(TAG, "createThumbnail firing");
 
@@ -290,7 +290,8 @@ public class VideoEditor extends CordovaPlugin {
 
         final long atTime = options.optLong("atTime", 0);
         final int quality = options.optInt("quality", 100);
-        final int shorterLength = options.optInt("shorterLength", 0);
+        final int width = options.optInt("width", 0);
+        final int height = options.optInt("height", 0);
 
         final Context appContext = cordova.getActivity().getApplicationContext();
         PackageManager pm = appContext.getPackageManager();
@@ -330,38 +331,23 @@ public class VideoEditor extends CordovaPlugin {
 
                     Bitmap bitmap = mmr.getFrameAtTime(atTime);
 
-                    System.out.println(shorterLength);
+                    if (width > 0 || height > 0) {
+                        int videoWidth = bitmap.getWidth();
+                        int videoHeight = bitmap.getHeight();
+                        double aspectRatio = videoWidth / videoHeight;
 
-                    if(shorterLength > 0) {
+                        Log.d(TAG, "videoWidth: " + videoWidth);
+                        Log.d(TAG, "videoHeight: " + videoHeight);
 
-                        int height = bitmap.getHeight();
-                        int width = bitmap.getWidth();
+                        int scaleWidth = Double.valueOf(height * aspectRatio).intValue();
+                        int scaleHeight = Double.valueOf(width / aspectRatio).intValue();
 
-                        System.out.println("height"+height);
-                        System.out.println("width"+width);
+                        Log.d(TAG, "scaleWidth: " + scaleWidth);
+                        Log.d(TAG, "scaleHeight: " + scaleHeight);
 
-                        if(height > shorterLength || width > shorterLength) {
-
-                            int scaleWidth;
-                            int scaleHeight;
-
-                            if(height > width) {
-                                scaleHeight = Double.valueOf((height * shorterLength)/(double) width).intValue();
-                                scaleWidth = shorterLength;
-                            } else {
-                                scaleHeight = shorterLength;
-                                scaleWidth = Double.valueOf((width * shorterLength)/(double) height).intValue();
-                            }
-
-                            System.out.println("scaleWidth "+scaleWidth);
-                            System.out.println("scaleHeight "+scaleHeight);
-
-                            final Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, scaleWidth, scaleHeight, false);
-                            bitmap.recycle();
-                            bitmap = resizedBitmap;
-
-                        }
-
+                        final Bitmap resizedBitmap = Bitmap.createScaledBitmap(bitmap, scaleWidth, scaleHeight, false);
+                        bitmap.recycle();
+                        bitmap = resizedBitmap;
                     }
 
                     outStream = new FileOutputStream(outputFile);
@@ -370,8 +356,7 @@ public class VideoEditor extends CordovaPlugin {
                     callback.success(outputFilePath);
 
                 } catch (Throwable e) {
-
-                    if(outStream != null) {
+                    if (outStream != null) {
                         try {
                             outStream.close();
                         } catch (IOException e1) {
@@ -391,7 +376,7 @@ public class VideoEditor extends CordovaPlugin {
     /**
      * getVideoInfo
      *
-     * Transcodes a video
+     * Gets info on a video
      *
      * ARGUMENTS
      * =========
