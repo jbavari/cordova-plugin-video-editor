@@ -122,7 +122,7 @@ public class VideoEditor extends CordovaPlugin {
         );
 
         final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
-        final int shorterLength = options.optInt("maxWidth", 960);
+        final int maxWidth = options.optInt("maxWidth", 960);
         final int fps = options.optInt("fps", 24);
         final int videoBitrate = options.optInt("videoBitrate", 1000000); // default to 1 megabit
         final long videoDuration = options.optLong("duration", 0) * 1000 * 1000;
@@ -231,7 +231,7 @@ public class VideoEditor extends CordovaPlugin {
                     };
 
                     MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
-                            new CustomAndroidFormatStrategy(videoBitrate, fps, shorterLength), listener, videoDuration);
+                            new CustomAndroidFormatStrategy(videoBitrate, fps, maxWidth), listener, videoDuration);
 
                 } catch (Throwable e) {
                     Log.d(TAG, "transcode exception ", e);
