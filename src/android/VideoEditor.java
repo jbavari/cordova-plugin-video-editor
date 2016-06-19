@@ -355,7 +355,7 @@ public class VideoEditor extends CordovaPlugin {
                         Log.d(TAG, "videoHeight: " + videoHeight);
 
                         int scaleWidth = Double.valueOf(height * aspectRatio).intValue();
-                        int scaleHeight = Double.valueOf(width / aspectRatio).intValue();
+                        int scaleHeight = Double.valueOf(scaleWidth / aspectRatio).intValue();
 
                         Log.d(TAG, "scaleWidth: " + scaleWidth);
                         Log.d(TAG, "scaleHeight: " + scaleHeight);

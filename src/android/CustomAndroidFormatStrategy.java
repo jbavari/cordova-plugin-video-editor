@@ -55,7 +55,7 @@ public class CustomAndroidFormatStrategy implements MediaFormatStrategy {
             double aspectRatio = (double) videoWidth / (double) videoHeight;
 
             outWidth = Double.valueOf(this.height * aspectRatio).intValue();
-            outHeight = Double.valueOf(this.width / aspectRatio).intValue();
+            outHeight = Double.valueOf(outWidth / aspectRatio).intValue();
         } else {
             outWidth = videoWidth;
             outHeight = videoHeight;
