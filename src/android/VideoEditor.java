@@ -89,7 +89,8 @@ public class VideoEditor extends CordovaPlugin {
      * outputFileName       - output file name
      * saveToLibrary        - save to gallery
      * deleteInputFile      - optionally remove input file
-     * maxWidth             - max width for the output video
+     * width                - width for the output video
+     * height               - height for the output video
      * fps                  - fps the video
      * videoBitrate         - video bitrate for the output video in bits
      * duration             - max video duration (in seconds?)
@@ -122,7 +123,8 @@ public class VideoEditor extends CordovaPlugin {
         );
 
         final boolean deleteInputFile = options.optBoolean("deleteInputFile", false);
-        final int maxWidth = options.optInt("maxWidth", 960);
+        final int width = options.optInt("width", 0);
+        final int height = options.optInt("height", 0);
         final int fps = options.optInt("fps", 24);
         final int videoBitrate = options.optInt("videoBitrate", 1000000); // default to 1 megabit
         final long videoDuration = options.optLong("duration", 0) * 1000 * 1000;
@@ -231,7 +233,7 @@ public class VideoEditor extends CordovaPlugin {
                     };
 
                     MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
-                            new CustomAndroidFormatStrategy(videoBitrate, fps, maxWidth), listener, videoDuration);
+                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height), listener, videoDuration);
 
                 } catch (Throwable e) {
                     Log.d(TAG, "transcode exception ", e);
@@ -334,7 +336,7 @@ public class VideoEditor extends CordovaPlugin {
                     if (width > 0 || height > 0) {
                         int videoWidth = bitmap.getWidth();
                         int videoHeight = bitmap.getHeight();
-                        double aspectRatio = videoWidth / videoHeight;
+                        double aspectRatio = (double) videoWidth / (double) videoHeight;
 
                         Log.d(TAG, "videoWidth: " + videoWidth);
                         Log.d(TAG, "videoHeight: " + videoHeight);
