@@ -232,8 +232,21 @@ public class VideoEditor extends CordovaPlugin {
                         }
                     };
 
+                    MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                    mmr.setDataSource(videoSrcPath);
+
+                    String orientation;
+                    String mmrOrientation = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+                    Log.d(TAG, "mmrOrientation: " + mmrOrientation); // 0, 90, 180, or 270
+
+                    if (mmrOrientation == "0" || mmrOrientation == "180") {
+                        orientation = "portrait";
+                    } else {
+                        orientation = "landscape";
+                    }
+
                     MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
-                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height), listener, videoDuration);
+                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height, orientation), listener, videoDuration);
 
                 } catch (Throwable e) {
                     Log.d(TAG, "transcode exception ", e);

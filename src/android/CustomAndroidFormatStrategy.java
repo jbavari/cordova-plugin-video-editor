@@ -16,40 +16,49 @@ public class CustomAndroidFormatStrategy implements MediaFormatStrategy {
     private static final String TAG = "CustomFormatStrategy";
     private static final int DEFAULT_BITRATE = 8000000;
     private static final int DEFAULT_FRAMERATE = 30;
-    private static final int DEFAULT_SHORT_LENGTH = 720;
+    private static final int DEFAULT_WIDTH = 0;
+    private static final int DEFAULT_HEIGHT = 0;
+    private static final String DEFAULT_ORIENTATION = "portrait";
     private final int mBitRate;
     private final int mFrameRate;
-    private final int mShorterLength;
+    private final int width;
+    private final int height;
+    private final String orientation;
 
     public CustomAndroidFormatStrategy() {
         this.mBitRate = DEFAULT_BITRATE;
         this.mFrameRate = DEFAULT_FRAMERATE;
-        this.mShorterLength = DEFAULT_SHORT_LENGTH;
+        this.width = DEFAULT_WIDTH;
+        this.height = DEFAULT_HEIGHT;
+        this.orientation = DEFAULT_ORIENTATION;
     }
 
-    public CustomAndroidFormatStrategy(final int bitRate, final int frameRate, final int shorterLength) {
+    public CustomAndroidFormatStrategy(final int bitRate, final int frameRate, final int width, final int height, final String orientation) {
         this.mBitRate = bitRate;
         this.mFrameRate = frameRate;
-        this.mShorterLength = shorterLength;
+        this.width = width;
+        this.height = height;
+        this.orientation = orientation;
     }
 
     public MediaFormat createVideoOutputFormat(MediaFormat inputFormat) {
-        int width = inputFormat.getInteger("width");
-        int height = inputFormat.getInteger("height");
+        int videoWidth = inputFormat.getInteger("width");
+        int videoHeight = inputFormat.getInteger("height");
         int outWidth;
         int outHeight;
 
-        if(width > mShorterLength || height > mShorterLength) {
-            if(width >= height) {
-                outWidth = Double.valueOf((width * mShorterLength)/(double) height).intValue();
-                outHeight = mShorterLength;
-            } else {
-                outWidth = mShorterLength;
-                outHeight = Double.valueOf((height * mShorterLength)/(double) width).intValue();
+        if (this.width > 0 || this.height > 0) {
+            if (this.orientation == "portrait" && videoWidth > videoHeight) {
+                videoWidth = inputFormat.getInteger("height");
+                videoHeight = inputFormat.getInteger("width");
             }
+            double aspectRatio = (double) videoWidth / (double) videoHeight;
+
+            outWidth = Double.valueOf(this.height * aspectRatio).intValue();
+            outHeight = Double.valueOf(this.width / aspectRatio).intValue();
         } else {
-            outHeight = height;
-            outWidth = width;
+            outWidth = videoWidth;
+            outHeight = videoHeight;
         }
 
         MediaFormat format = MediaFormat.createVideoFormat("video/avc", outWidth, outHeight);
