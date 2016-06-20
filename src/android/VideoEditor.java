@@ -6,10 +6,8 @@ import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.ArrayList;
 
 import android.graphics.Bitmap;
-import android.graphics.Matrix;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.PluginResult;
@@ -33,7 +31,6 @@ import android.provider.MediaStore;
 import android.util.Log;
 
 import net.ypresto.androidtranscoder.MediaTranscoder;
-import net.ypresto.androidtranscoder.format.MediaFormatStrategyPresets;
 
 /**
  * VideoEditor plugin for Android
