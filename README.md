@@ -29,19 +29,19 @@ VideoEditor.transcodeVideo(
     {
         fileUri: 'file-uri-here', // the path to the video on the device
         outputFileName: 'output-name', // the file name for the transcoded video
-        outputFileType: VideoEditorOptions.OutputFileType.MPEG4,
-        optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES,
+        outputFileType: VideoEditorOptions.OutputFileType.MPEG4, // android is always mp4
+        optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse.YES, // ios only
         saveToLibrary: true, // optional, defaults to true
         deleteInputFile: false, // optional (android only), defaults to false
-        maintainAspectRatio: true, // optional, defaults to true
+        maintainAspectRatio: true, // optional (ios only), defaults to true
         width: 640, // optional, see note below on width and height
         height: 640, // optional, see notes below on width and height
         videoBitrate: 1000000, // optional, bitrate in bits, defaults to 1 megabit (1000000)
         fps: 24, // optional (android only), defaults to 24
-        audioChannels: 2, // optional, number of audio channels, defaults to 2
-        audioSampleRate: 44100, // optional, sample rate for the audio, defaults to 44100
-        audioBitrate: 128000, // optional, audio bitrate for the video in bits, defaults to 128 kilobits (128000)
-        progress: function(info) {} // optional, see docs on progress
+        audioChannels: 2, // optional (ios only), number of audio channels, defaults to 2
+        audioSampleRate: 44100, // optional (ios only), sample rate for the audio, defaults to 44100
+        audioBitrate: 128000, // optional (ios only), audio bitrate for the video in bits, defaults to 128 kilobits (128000)
+        progress: function(info) {} // info will be a number from 0 to 100
     }
 );
 ```
@@ -53,7 +53,7 @@ outputWidth = height * aspectRatio;
 outputHeight = outputWidth / aspectRatio;
 ```
 
-Android uses the ffmpeg scale filter like this `ffmpeg -i input.mp4 -vf scale:640:-2 output.mp4`.  This will set the width of the output video to 640 pixels and will calculate the height of the output video according to the aspect ratio of the input video.
+Android will always use the aspect ratio of the input video to calculate the scaled output width and height.  Setting `maintainAspectRatio` on android will make not make a difference.
 
 If you don't provide width and height to `transcodeVideo` the output video will have the same dimensions as the input video.
 
@@ -129,7 +129,7 @@ function videoTranscodeError(err) {
 #### Windows Quirks
 Windows does not support any of the optional parameters at this time. Specifying them will not cause an error but, there is no functionality behind them.
 
-### Trim a Video
+### Trim a Video (iOS only)
 ```javascript
 VideoEditor.trim(
     trimSuccess,
@@ -247,172 +247,6 @@ function getVideoInfoSuccess(info) {
     }
 }
 ```
-
-### Execute an FFMPEG command (Android only)
-[FFMPEG documentation](https://ffmpeg.org/ffmpeg.html)
-```javascript
-VideoEditor.execFFMPEG(
-    success, // success cb
-    error, // error cb
-    {
-        cmd: ['-pass', 'an', '-array', 'of', '-ffmpeg', 'command', '-strings', 'here'] // see example below
-    }
-);
-```
-```javascript
-// this example uses the cordova media capture plugin to get the input file path
-navigator.device.capture.captureVideo(
-    videoCaptureSuccess,
-    videoCaptureError,
-    {
-        limit: 1,
-        duration: 20
-    }
-);
-
-function videoCaptureSuccess(mediaFiles) {
-    // Wrap this below in a ~100 ms timeout to ensure the recorded file is available
-
-    var outputPath = cordova.file.externalRootDirectory;
-    var outputFileName = 'test.mp4';
-
-    createOutputFile(outputPath, outputFileName, function(fileEntry) {
-        if (!fileEntry) {
-            console.log('error creating file');
-            return;
-        }
-
-        // the file paths need to be absolute without file:// (ex. "/storage/sdcard0/test.mp4")
-        var inputFilePath = mediaFiles[0].fullPath.replace('file:', '');
-        var outputFilePath = fileEntry.toURL().replace('file://', '');
-
-        // this ffmpeg command gives an output file with 512kbps bit rate, 640x640 res @ 24 fps, using the h.264 codec (-stict -2 enables expirmental codecs)
-        // you can pass multiple input/output files... use ffmpeg however you want
-        var cmd = ['-y', '-i', inputFilePath, '-b:v', '512k', '-s', '640x640', '-r', '24', '-vcodec', 'libx264', '-strict', '-2', outputFilePath];
-
-        VideoEditor.execFFMPEG(
-            ffmpegSuccess,
-            ffmpegError,
-            {
-                cmd: cmd,
-                progress: function(info) {} // optional, see docs on progress
-            }
-        );
-
-    });
-}
-
-function ffmpegSuccess() {
-    console.log('execFFMPEG success');
-}
-
-function ffmpegError(err) {
-    console.log('ffmpegError, err: ' + err);
-}
-
-// this helper function I made creates a file at a provided path using the cordova-file plugin
-// you can pass cordova.file.cacheDirectory, cordova.file.externalRootDirectory, etc.
-function createOutputFile(path, fileName, cb) {
-    window.requestFileSystem(window.PERSISTENT, 5*1024*1024,
-        function(fs) {
-            window.resolveLocalFileSystemURL(path,
-                function(dirEntry) {
-                    dirEntry.getFile(fileName, { create: true, exclusive: false }, function(fileEntry) {
-                        console.log('successfully created file');
-                        return cb(fileEntry);
-                    }, function(err) {
-                        console.log('error creating file, err: ' + err);
-                        return cb(null);
-                    });
-                },
-                function(err) {
-                    console.log('error finding specified path, err: ' + err);
-                    return cb(null);
-                }
-            );
-        },
-        function(err) {
-            console.log('error accessing file system, err: ' + err);
-            return cb(null);
-        }
-    );
-}
-```
-
-### How to use the progress callback function
-```javascript
-VideoEditor.transcodeVideo(
-    success, // success cb
-    error, // error cb
-    {
-        ....
-        progress: onVideoEditorProgress
-    }
-)
-
-// for android make a duration variable to be updated on each progress function call
-// you could use a dynamic variable name if you are doing multiple VideoEditor tasks simultaneously
-var duration = 0;
-
-function onVideoEditorProgress(info) {
-    // info on android will be shell output from android-ffmpeg-java
-    // info on ios will be a number from 0 to 100
-
-    if (device.platform.toLowerCase() === 'ios') {
-        // use info to update your progress indicator
-        return; // the code below is for android
-    }
-
-    // for android this arithmetic below can be used to track the progress
-    // of ffmpeg by using info provided by the android-ffmpeg-java shell output
-    // this is a modified version of http://stackoverflow.com/a/17314632/1673842
-
-    // get duration of source
-    if (!duration) {
-        var matches = (info) ? info.match(/Duration: (.*?), start:/) : [];
-        if (matches && matches.length > 0) {
-            var rawDuration = matches[1];
-            // convert rawDuration from 00:00:00.00 to seconds.
-            var ar = rawDuration.split(":").reverse();
-            duration = parseFloat(ar[0]);
-            if (ar[1]) duration += parseInt(ar[1]) * 60;
-            if (ar[2]) duration += parseInt(ar[2]) * 60 * 60;  
-        }
-        return;
-    }
-
-    // get the time
-    var matches = info.match(/time=(.*?) bitrate/g);
-
-    if (matches && matches.length > 0) {
-        var time = 0;
-        var progress = 0;
-        var rawTime = matches.pop();
-        rawTime = rawTime.replace('time=', '').replace(' bitrate', '');
-
-        // convert rawTime from 00:00:00.00 to seconds.
-        var ar = rawTime.split(":").reverse();
-        time = parseFloat(ar[0]);
-        if (ar[1]) time += parseInt(ar[1]) * 60;
-        if (ar[2]) time += parseInt(ar[2]) * 60 * 60;
-
-        //calculate the progress
-        progress = Math.round((time / duration) * 100);
-
-        var progressObj = {
-            duration: duration,
-            current: time,
-            progress: progress
-        };
-
-        console.log('progressObj: ' + JSON.stringify(progressObj, null, 2));
-
-        /* update your progress indicator here with above values ... */
-    }
-}
-```
-
-
 
 ## On iOS
 
