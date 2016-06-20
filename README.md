@@ -248,6 +248,9 @@ function getVideoInfoSuccess(info) {
 }
 ```
 
+## Android & FFmpeg
+FFmpeg has been removed from android for several reasons but mainly for performance.  If you still need the old functionality that FFmpeg provided  [V1.09](https://github.com/jbavari/cordova-plugin-video-editor/tree/1.0.9) is the last version that will use it.
+
 ## On iOS
 
 [iOS Developer AVFoundation Documentation](https://developer.apple.com/library/ios/documentation/AudioVideo/Conceptual/AVFoundationPG/Articles/01_UsingAssets.html#//apple_ref/doc/uid/TP40010188-CH7-SW8)
