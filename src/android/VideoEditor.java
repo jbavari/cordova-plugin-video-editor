@@ -300,10 +300,12 @@ public class VideoEditor extends CordovaPlugin {
                 new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
         );
 
-        final long atTime = options.optLong("atTime", 0);
         final int quality = options.optInt("quality", 100);
         final int width = options.optInt("width", 0);
         final int height = options.optInt("height", 0);
+        long atTimeOpt = options.optLong("atTime", 0);
+        final long atTime;
+        atTime = (atTimeOpt == 0) ? 0 : atTimeOpt * 1000000;
 
         final Context appContext = cordova.getActivity().getApplicationContext();
         PackageManager pm = appContext.getPackageManager();
