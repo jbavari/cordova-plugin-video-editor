@@ -42,6 +42,20 @@ declare interface VideoEditorTranscodeProperties {
         saveToLibrary?: boolean,
         /** Not supported in windows, delete the orginal video*/
         deleteInputFile?: boolean,
+        /** iOS only. Defaults to true */
+        maintainAspectRatio?: boolean,
+        /** Width of the result */
+        width?: number,
+        /** Height of the result */
+        height?: number,
+        /** Bitrate in bits. Defaults to 1 megabit (1000000). */
+        videoBitrate?: number,
+        /** Frames per second of the result. Android only. Defaults to 24. */
+        fps?: number,
+        /** Number of audio channels. iOS only. Defaults to 2. */
+        audioChannels?: number,
+        /** Sample rate for the audio. iOS only. Defaults to 4410. */
+        audioBitrate?: number,
         /** Not supported in windows, progress on the transcode*/
         progress?: (info: any) => void
 }
@@ -57,7 +71,9 @@ declare interface VideoEditorTrimProperties {
         /** A number of seconds to trim the front of the video. */
         trimEnd: number,
         /** A string that indicates what type of field this is, home for example. */
-        outputFileName: string
+        outputFileName: string,
+        /** Progress on transcode. */
+        progress?: (info: any) => void
 }
 
 /**
@@ -67,7 +83,35 @@ declare interface VideoEditorThumbnailProperties {
         /** A well-known location where the editable video lives. */
         fileUri: string,
         /** A string that indicates what type of field this is, home for example. */
-        outputFileName: string
+        outputFileName: string,
+        /** Location in video to create the thumbnail (in seconds). */
+        atTime?: number,
+        /** Width of the thumbnail. */
+        width?: number,
+        /** Height of the thumbnail. */
+        height?: number,
+        /** Quality of the thumbnail (between 1 and 100). */
+        quality?: number
+}
+
+declare interface VideoEditorVideoInfoOptions {
+        /** Path to the video on the device. */
+        fileUri: string
+}
+
+declare interface VideoEditorVideoInfoDetails {
+        /** Width of the video. */
+        width: number,
+        /** Height of the video. */
+        height: number,
+        /** Orientation of the video. Will be either portrait or landscape. */
+        orientation: 'portrait' | 'landscape',
+        /** Duration of the video in seconds. */
+        duration: number,
+        /** Size of the video in bytes. */
+        size: number,
+        /** Bitrate of the video in bits per second. */
+        bitrate: number
 }
 
 /**
@@ -109,6 +153,17 @@ interface VideoEditor {
     createThumbnail(onSuccess: (path: string) => void,
         onError: (error: any) => void,
         options: VideoEditorThumbnailProperties): void;
+
+    /**
+     * The VideoEditor.getVideoInfo method executes asynchronously, taking a video location and returning the details of the video.
+     * The resulting info object is passed to the onSuccess callback function specified by the onSuccess parameter.
+     * @param onSuccess Success callback function invoked with the details of the video.
+     * @param onError Error callback function, invoked when an error occurs.
+     * @param infoOptions Info options that are required to locate the video.
+     */
+    getVideoInfo(onSuccess: (info: VideoEditorVideoInfoDetails) => void,
+        onError: (error: any) => void,
+        options: VideoEditorVideoInfoOptions): void;
 }
 
 declare var VideoEditor: VideoEditor;
