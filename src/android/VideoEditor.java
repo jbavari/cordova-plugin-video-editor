@@ -458,7 +458,7 @@ public class VideoEditor extends CordovaPlugin {
                     orientation = "portrait";
                 }
             }
-} else {
+        } else {
             orientation = (videoWidth < videoHeight) ? "portrait" : "landscape";
         }
 
