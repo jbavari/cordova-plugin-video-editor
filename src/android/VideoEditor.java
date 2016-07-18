@@ -236,6 +236,8 @@ public class VideoEditor extends CordovaPlugin {
                     String mmrOrientation = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
                     Log.d(TAG, "mmrOrientation: " + mmrOrientation); // 0, 90, 180, or 270
 
+                    float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+                    float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
                     if (videoWidth < videoHeight) {
                         if (mmrOrientation.equals("0") || mmrOrientation.equals("180")) {
                             orientation = "portrait";
@@ -443,12 +445,20 @@ public class VideoEditor extends CordovaPlugin {
             String mmrOrientation = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
             Log.d(TAG, "mmrOrientation: " + mmrOrientation); // 0, 90, 180, or 270
 
-            if (mmrOrientation == "0" || mmrOrientation == "180") {
-                orientation = "portrait";
+            if (videoWidth < videoHeight) {
+                if (mmrOrientation.equals("0") || mmrOrientation.equals("180")) {
+                    orientation = "portrait";
+                } else {
+                    orientation = "landscape";
+                }
             } else {
-                orientation = "landscape";
+                if (mmrOrientation.equals("0") || mmrOrientation.equals("180")) {
+                    orientation = "landscape";
+                } else {
+                    orientation = "portrait";
+                }
             }
-        } else {
+} else {
             orientation = (videoWidth < videoHeight) ? "portrait" : "landscape";
         }
 
