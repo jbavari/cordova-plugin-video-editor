@@ -236,10 +236,18 @@ public class VideoEditor extends CordovaPlugin {
                     String mmrOrientation = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
                     Log.d(TAG, "mmrOrientation: " + mmrOrientation); // 0, 90, 180, or 270
 
-                    if (mmrOrientation == "0" || mmrOrientation == "180") {
-                        orientation = "portrait";
+                    if (videoWidth < videoHeight) {
+                        if (mmrOrientation.equals("0") || mmrOrientation.equals("180")) {
+                            orientation = "portrait";
+                        } else {
+                            orientation = "landscape";
+                        }
                     } else {
-                        orientation = "landscape";
+                        if (mmrOrientation.equals("0") || mmrOrientation.equals("180")) {
+                            orientation = "landscape";
+                        } else {
+                            orientation = "portrait";
+                        }
                     }
 
                     MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
