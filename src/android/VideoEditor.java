@@ -238,22 +238,9 @@ public class VideoEditor extends CordovaPlugin {
 
                     float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
                     float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-                    if (videoWidth < videoHeight) {
-                        if (mmrOrientation.equals("0") || mmrOrientation.equals("180")) {
-                            orientation = "portrait";
-                        } else {
-                            orientation = "landscape";
-                        }
-                    } else {
-                        if (mmrOrientation.equals("0") || mmrOrientation.equals("180")) {
-                            orientation = "landscape";
-                        } else {
-                            orientation = "portrait";
-                        }
-                    }
 
                     MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
-                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height, orientation), listener, videoDuration);
+                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height), listener, videoDuration);
 
                 } catch (Throwable e) {
                     Log.d(TAG, "transcode exception ", e);

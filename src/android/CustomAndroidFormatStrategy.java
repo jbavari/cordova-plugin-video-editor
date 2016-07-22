@@ -18,27 +18,23 @@ public class CustomAndroidFormatStrategy implements MediaFormatStrategy {
     private static final int DEFAULT_FRAMERATE = 30;
     private static final int DEFAULT_WIDTH = 0;
     private static final int DEFAULT_HEIGHT = 0;
-    private static final String DEFAULT_ORIENTATION = "portrait";
     private final int mBitRate;
     private final int mFrameRate;
     private final int width;
     private final int height;
-    private final String orientation;
 
     public CustomAndroidFormatStrategy() {
         this.mBitRate = DEFAULT_BITRATE;
         this.mFrameRate = DEFAULT_FRAMERATE;
         this.width = DEFAULT_WIDTH;
         this.height = DEFAULT_HEIGHT;
-        this.orientation = DEFAULT_ORIENTATION;
     }
 
-    public CustomAndroidFormatStrategy(final int bitRate, final int frameRate, final int width, final int height, final String orientation) {
+    public CustomAndroidFormatStrategy(final int bitRate, final int frameRate, final int width, final int height) {
         this.mBitRate = bitRate;
         this.mFrameRate = frameRate;
         this.width = width;
         this.height = height;
-        this.orientation = orientation;
     }
 
     public MediaFormat createVideoOutputFormat(MediaFormat inputFormat) {
@@ -48,15 +44,10 @@ public class CustomAndroidFormatStrategy implements MediaFormatStrategy {
         int outHeight;
 
         if (this.width > 0 || this.height > 0) {
-            if (this.orientation == "portrait" && videoWidth > videoHeight) {
-                videoWidth = inputFormat.getInteger("height");
-                videoHeight = inputFormat.getInteger("width");
-            }
             double aspectRatio = (double) videoWidth / (double) videoHeight;
-
             outWidth = Double.valueOf(this.height * aspectRatio).intValue();
             outHeight = Double.valueOf(outWidth / aspectRatio).intValue();
-        } else {
+          } else {
             outWidth = videoWidth;
             outHeight = videoHeight;
         }
