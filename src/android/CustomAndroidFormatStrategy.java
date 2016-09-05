@@ -38,18 +38,41 @@ public class CustomAndroidFormatStrategy implements MediaFormatStrategy {
     }
 
     public MediaFormat createVideoOutputFormat(MediaFormat inputFormat) {
-        int videoWidth = inputFormat.getInteger("width");
-        int videoHeight = inputFormat.getInteger("height");
-        int outWidth;
-        int outHeight;
+        int inWidth = inputFormat.getInteger(MediaFormat.KEY_WIDTH);
+        int inHeight = inputFormat.getInteger(MediaFormat.KEY_HEIGHT);
+        int inLonger, inShorter, outWidth, outHeight, outLonger;
+        double aspectRatio;
 
-        if (this.width > 0 || this.height > 0) {
-            double aspectRatio = (double) videoWidth / (double) videoHeight;
-            outWidth = Double.valueOf(this.height * aspectRatio).intValue();
-            outHeight = Double.valueOf(outWidth / aspectRatio).intValue();
-          } else {
-            outWidth = videoWidth;
-            outHeight = videoHeight;
+        if (this.width >= this.height) {
+            outLonger = this.width;
+        } else {
+            outLonger = this.height;
+        }
+
+        if (inWidth >= inHeight) {
+            inLonger = inWidth;
+            inShorter = inHeight;
+
+        } else {
+            inLonger = inHeight;
+            inShorter = inWidth;
+
+        }
+
+        if (inLonger > outLonger) {
+            if (inWidth >= inHeight) {
+                aspectRatio = (double) inLonger / (double) inShorter;
+                outWidth = outLonger;
+                outHeight = Double.valueOf(outWidth / aspectRatio).intValue();
+
+            } else {
+                aspectRatio = (double) inLonger / (double) inShorter;
+                outHeight = outLonger;
+                outWidth = Double.valueOf(outHeight / aspectRatio).intValue();
+            }
+        } else {
+            outWidth = inWidth;
+            outHeight = inHeight;
         }
 
         MediaFormat format = MediaFormat.createVideoFormat("video/avc", outWidth, outHeight);
