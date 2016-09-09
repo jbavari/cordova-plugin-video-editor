@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-video-editor",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Cordova Video Editor Plugin",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
