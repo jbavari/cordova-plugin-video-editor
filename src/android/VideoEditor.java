@@ -493,10 +493,10 @@ public class VideoEditor extends CordovaPlugin {
         }
 
         if (!fp.exists()) {
-            throw new FileNotFoundException();
+            throw new FileNotFoundException( "" + url + " -> " + fp.getCanonicalPath());
         }
         if (!fp.canRead()) {
-            throw new IOException();
+            throw new IOException("can't read file: " + url + " -> " + fp.getCanonicalPath());
         }
         return fp;
     }
