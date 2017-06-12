@@ -362,7 +362,7 @@ public class VideoEditor extends CordovaPlugin {
 
                     outStream = new FileOutputStream(outputFile);
                     bitmap.compress(Bitmap.CompressFormat.JPEG, quality, outStream);
-
+                    mmr.release();
                     callback.success(outputFilePath);
 
                 } catch (Throwable e) {
@@ -451,7 +451,7 @@ public class VideoEditor extends CordovaPlugin {
 
         double duration = Double.parseDouble(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)) / 1000.0;
         long bitrate = Long.parseLong(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_BITRATE));
-
+        mmr.release();
         JSONObject response = new JSONObject();
         response.put("width", videoWidth);
         response.put("height", videoHeight);
