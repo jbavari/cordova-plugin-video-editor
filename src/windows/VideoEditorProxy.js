@@ -144,6 +144,62 @@ module.exports = {
             //failed
             fail(details);
         });
+    },
+
+    /**
+     * getVideoInfo
+     *
+     * Get common video info for the uri passed in
+     *
+     * ARGUMENTS
+     * =========
+     * fileUri       - input file path
+     *
+     * RESPONSE
+     * ========
+     *
+     * width         - width of the video
+     * height        - height of the video
+     * orientation   - orientation of the video
+     * duration      - duration of the video (in seconds)
+     * size          - size of the video (in bytes)
+     * bitrate       - bitrate of the video (in bits per second)
+     *
+     * @param promise win
+     * @param promise fail
+     * @param object args
+     * @return void
+     */
+    getVideoInfo: function (win, fail, args) {
+        //get args from cordova app
+        var options = args[0];
+
+        var file, basicProps;
+
+        //look up the video file
+        Windows.Storage.StorageFile.getFileFromApplicationUriAsync(new Windows.Foundation.Uri(options.fileUri)).then(function (storageFile) {
+            //assign storage file to global variable
+            file = storageFile;
+            //get basic properties for size
+            return file.getBasicPropertiesAsync();
+        }).then(function (basicProperties) {
+            basicProps = basicProperties;
+            //get video properties for the rest of info
+            return file.properties.getVideoPropertiesAsync();
+        }).done(function (videoProps) {
+            //resolve the video info
+            win({
+                width: videoProps.width,    
+                height: videoProps.height,     
+                orientation: (videoProps.height > videoProps.width) ? 'portrait' :'landscape',
+                duration: videoProps.duration,
+                size: basicProps.size,
+                bitrate: videoProps.bitrate  
+            });
+        }, function (details) {
+            //failed
+            fail(details);
+        });
     }
 }
 
