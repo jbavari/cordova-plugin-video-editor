@@ -2,7 +2,7 @@
 
 ## Android version
 
-GPL
+Apache 2.0
 
 ## iOS version
 
