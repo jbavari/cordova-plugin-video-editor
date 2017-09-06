@@ -283,7 +283,7 @@ FFmpeg has been removed from android for several reasons but mainly for performa
 
 ## License
 
-Android: GPL
+Android: Apache 2.0
 
 iOS: MIT
 
