@@ -332,6 +332,13 @@
 
     NSString *filePath = [options objectForKey:@"fileUri"];
     NSURL *fileURL = [self getURLFromFilePath:filePath];
+    
+    // bert add modify video duration
+    AVURLAsset * asset = [AVURLAsset assetWithURL:fileURL];
+    CMTime   time = [asset duration];
+    CGFloat seconds = ceil(time.value/time.timescale);
+    NSLog(@"%f",seconds);
+    
 
     unsigned long long size = [[NSFileManager defaultManager] attributesOfItemAtPath:[fileURL path] error:nil].fileSize;
 
@@ -359,10 +366,12 @@
     [dict setObject:[NSNumber numberWithFloat:videoWidth] forKey:@"width"];
     [dict setObject:[NSNumber numberWithFloat:videoHeight] forKey:@"height"];
     [dict setValue:videoOrientation forKey:@"orientation"];
-    [dict setValue:[NSNumber numberWithFloat:track.timeRange.duration.value / 600.0] forKey:@"duration"];
+//    [dict setValue:[NSNumber numberWithFloat:track.timeRange.duration.value / 600.0] forKey:@"duration"];
+    [dict setValue:[NSNumber numberWithFloat:seconds] forKey:@"duration"];
     [dict setObject:[NSNumber numberWithLongLong:size] forKey:@"size"];
     [dict setObject:[NSNumber numberWithFloat:track.estimatedDataRate] forKey:@"bitrate"];
 
+//    NSLog(@"-------------------%@---------------------------",dict);
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:command.callbackId];
 }
 
