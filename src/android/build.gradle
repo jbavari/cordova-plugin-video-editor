@@ -5,7 +5,8 @@ repositories{
 }
 
 dependencies {
-    compile 'com.github.ergovia-mobile:android-transcoder:v0.1.10R_ergovia'
+    compile 'net.ypresto.androidtranscoder:android-transcoder:0.3.0'
+    compile 'com.googlecode.mp4parser:isoparser:1.1.21'
 }
 
 android {

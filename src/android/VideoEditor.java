@@ -6,6 +6,7 @@ import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.ArrayList;
 
 import android.graphics.Bitmap;
 import org.apache.cordova.CordovaPlugin;
@@ -29,6 +30,23 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
+
+import com.googlecode.mp4parser.FileDataSourceImpl;
+import com.googlecode.mp4parser.authoring.Movie;
+import com.googlecode.mp4parser.authoring.Track;
+import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
+import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
+import com.googlecode.mp4parser.authoring.tracks.CroppedTrack;
+import com.googlecode.mp4parser.util.Matrix;
+import com.googlecode.mp4parser.util.Path;
+
+import com.coremedia.iso.boxes.Container;
+import com.coremedia.iso.boxes.MovieHeaderBox;
+
+import java.nio.channels.WritableByteChannel;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import net.ypresto.androidtranscoder.MediaTranscoder;
 
@@ -65,6 +83,13 @@ public class VideoEditor extends CordovaPlugin {
         } else if (action.equals("getVideoInfo")) {
             try {
                 this.getVideoInfo(args);
+            } catch (IOException e) {
+                callback.error(e.toString());
+            }
+            return true;
+        } else if (action.equals("trim")) {
+            try {
+                this.trim(args);
             } catch (IOException e) {
                 callback.error(e.toString());
             }
@@ -462,7 +487,184 @@ public class VideoEditor extends CordovaPlugin {
 
         callback.success(response);
     }
+    /**
+     * getFileExt
+     *
+     * Gets the file extension from a filename
+     *
+     * @param String filename
+     * @return String
+     */
+    private String getFileExt(String filename){
+        try {
+            return filename.substring(filename.lastIndexOf("."));
 
+        }
+        catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * getTempDir
+     *
+     * Make a temp directory for storing intermediate files.
+     * Named after file type, eg 'mp4', 'ts')
+     *
+     * @param Context appContext
+     * @param String ext
+     * @return File
+     */
+    private File getTempDir(Context appContext, String ext){
+        final File tempDir = new File(appContext.getCacheDir(), ext.substring(1));
+        if(!tempDir.exists()){
+            if (!tempDir.mkdirs()) {
+                callback.error("Can't access or make temporary cache directory");
+                return null;
+            }
+        }
+        return tempDir;
+    }
+
+	/**
+     * trim
+     *
+     * Performs a fast-trim operation on an input clip.
+     *
+     * ARGUMENTS
+     * =========
+     *
+     * fileUri      - path to input video
+     * trimStart      - time to start trimming
+     * trimEnd        - time to end trimming
+     * outputFileName - output file name
+     *
+     * RESPONSE
+     * ========
+     *
+     * outputFilePath - path to output file
+     *
+     * @param JSONArray args
+     * @return void
+     */
+    public void trim(JSONArray args) throws JSONException, IOException {
+        JSONObject options = args.optJSONObject(0);
+        final String inputFilePath = options.getString("fileUri").replace("file:/", "");
+        double startTime =  options.optDouble("trimStart", 0);
+        double endTime =  options.optDouble("trimEnd", 0);
+
+        final String outputFileName = options.optString(
+                "outputFileName",
+                new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
+        );
+
+        // outputFileExt
+        final String outputFileExt = this.getFileExt(inputFilePath);
+
+        // tempDir
+        final Context appContext = cordova.getActivity().getApplicationContext();
+        final File tempDir = this.getTempDir(appContext, outputFileExt);
+        // outputFilePath
+        final File outputFile = new File(tempDir, outputFileName + outputFileExt);
+        final String outputFilePath = outputFile.getAbsolutePath();
+
+        final File inputFile = new File(inputFilePath);
+
+        FileDataSourceImpl file = new FileDataSourceImpl(inputFile);
+        Movie movie = MovieCreator.build(file);
+        // remove all tracks we will create new tracks from the old
+        List<Track> tracks = movie.getTracks();
+        movie.setTracks(new LinkedList<Track>());
+        boolean timeCorrected = false;
+        // Here we try to find a track that has sync samples. Since we can only start decoding
+        // at such a sample we SHOULD make sure that the start of the new fragment is exactly
+        // such a frame
+        for (Track track : tracks) {
+            if (track.getSyncSamples() != null && track.getSyncSamples().length > 0) {
+                if (timeCorrected) {
+                    // This exception here could be a false positive in case we have multiple tracks
+                    // with sync samples at exactly the same positions. E.g. a single movie containing
+                    // multiple qualities of the same video (Microsoft Smooth Streaming file)
+                    throw new RuntimeException("The startTime has already been corrected by another track with SyncSample. Not Supported.");
+                }
+                startTime = correctTimeToSyncSample(track, startTime, false);
+                endTime = correctTimeToSyncSample(track, endTime, true);
+                timeCorrected = true;
+            }
+        }
+        for (Track track : tracks) {
+            long currentSample = 0;
+            double currentTime = 0;
+            long startSample = -1;
+            long endSample = -1;
+
+            for (int i = 0; i < track.getSampleDurations().length; i++) {
+                if (currentTime <= startTime) {
+
+                    // current sample is still before the new starttime
+                    startSample = currentSample;
+                }
+                if (currentTime <= endTime) {
+                    // current sample is after the new start time and still before the new endtime
+                    endSample = currentSample;
+                } else {
+                    // current sample is after the end of the cropped video
+                    break;
+                }
+                currentTime += (double) track.getSampleDurations()[i] / (double) track.getTrackMetaData().getTimescale();
+                currentSample++;
+            }
+            movie.addTrack(new CroppedTrack(track, startSample, endSample));
+        }
+
+        Container out = new DefaultMp4Builder().build(movie);
+        MovieHeaderBox mvhd = Path.getPath(out, "moov/mvhd");
+        mvhd.setMatrix(Matrix.ROTATE_0);
+        if (!outputFile.exists()) {
+            outputFile.createNewFile();
+        }
+        FileOutputStream fos = new FileOutputStream(outputFilePath);
+        WritableByteChannel fc = fos.getChannel();
+        try {
+            out.writeContainer(fc);
+        } finally {
+            fc.close();
+            fos.close();
+            file.close();
+            callback.success(outputFilePath);
+        }
+
+        file.close();
+
+    }
+
+    private static double correctTimeToSyncSample(Track track, double cutHere, boolean next) {
+        double[] timeOfSyncSamples = new double[track.getSyncSamples().length];
+        long currentSample = 0;
+        double currentTime = 0;
+        for (int i = 0; i < track.getSampleDurations().length; i++) {
+            long delta = track.getSampleDurations()[i];
+
+            if (Arrays.binarySearch(track.getSyncSamples(), currentSample + 1) >= 0) {
+                timeOfSyncSamples[Arrays.binarySearch(track.getSyncSamples(), currentSample + 1)] = currentTime;
+            }
+            currentTime += (double) delta / (double) track.getTrackMetaData().getTimescale();
+            currentSample++;
+
+        }
+        double previous = 0;
+        for (double timeOfSyncSample : timeOfSyncSamples) {
+            if (timeOfSyncSample > cutHere) {
+                if (next) {
+                    return timeOfSyncSample;
+                } else {
+                    return previous;
+                }
+            }
+            previous = timeOfSyncSample;
+        }
+        return timeOfSyncSamples[timeOfSyncSamples.length - 1];
+    }
 
     @SuppressWarnings("deprecation")
     private File resolveLocalFileSystemURI(String url) throws IOException, JSONException {
