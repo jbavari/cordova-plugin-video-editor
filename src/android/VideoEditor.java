@@ -31,8 +31,22 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
 
+import com.googlecode.mp4parser.FileDataSourceImpl;
+import com.googlecode.mp4parser.authoring.Movie;
+import com.googlecode.mp4parser.authoring.Track;
+import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
+import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
+import com.googlecode.mp4parser.authoring.tracks.CroppedTrack;
+import com.googlecode.mp4parser.util.Matrix;
+import com.googlecode.mp4parser.util.Path;
+
 import com.coremedia.iso.boxes.Container;
 import com.coremedia.iso.boxes.MovieHeaderBox;
+
+import java.nio.channels.WritableByteChannel;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import net.ypresto.androidtranscoder.MediaTranscoder;
 
@@ -473,6 +487,44 @@ public class VideoEditor extends CordovaPlugin {
 
         callback.success(response);
     }
+    /**
+     * getFileExt
+     *
+     * Gets the file extension from a filename
+     *
+     * @param String filename
+     * @return String
+     */
+    private String getFileExt(String filename){
+        try {
+            return filename.substring(filename.lastIndexOf("."));
+
+        }
+        catch (Exception e) {
+            return "";
+        }
+    }
+
+    /**
+     * getTempDir
+     *
+     * Make a temp directory for storing intermediate files.
+     * Named after file type, eg 'mp4', 'ts')
+     *
+     * @param Context appContext
+     * @param String ext
+     * @return File
+     */
+    private File getTempDir(Context appContext, String ext){
+        final File tempDir = new File(appContext.getCacheDir(), ext.substring(1));
+        if(!tempDir.exists()){
+            if (!tempDir.mkdirs()) {
+                callback.error("Can't access or make temporary cache directory");
+                return null;
+            }
+        }
+        return tempDir;
+    }
 
 	/**
      * trim
@@ -586,6 +638,33 @@ public class VideoEditor extends CordovaPlugin {
 
     }
 
+    private static double correctTimeToSyncSample(Track track, double cutHere, boolean next) {
+        double[] timeOfSyncSamples = new double[track.getSyncSamples().length];
+        long currentSample = 0;
+        double currentTime = 0;
+        for (int i = 0; i < track.getSampleDurations().length; i++) {
+            long delta = track.getSampleDurations()[i];
+
+            if (Arrays.binarySearch(track.getSyncSamples(), currentSample + 1) >= 0) {
+                timeOfSyncSamples[Arrays.binarySearch(track.getSyncSamples(), currentSample + 1)] = currentTime;
+            }
+            currentTime += (double) delta / (double) track.getTrackMetaData().getTimescale();
+            currentSample++;
+
+        }
+        double previous = 0;
+        for (double timeOfSyncSample : timeOfSyncSamples) {
+            if (timeOfSyncSample > cutHere) {
+                if (next) {
+                    return timeOfSyncSample;
+                } else {
+                    return previous;
+                }
+            }
+            previous = timeOfSyncSample;
+        }
+        return timeOfSyncSamples[timeOfSyncSamples.length - 1];
+    }
 
     @SuppressWarnings("deprecation")
     private File resolveLocalFileSystemURI(String url) throws IOException, JSONException {
