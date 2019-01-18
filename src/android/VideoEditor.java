@@ -49,10 +49,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import net.ypresto.androidtranscoder.MediaTranscoder;
-import net.ypresto.androidtranscoder.format.MediaFormatStrategyPresets;
-
-import com.madhavanmalolan.ffmpegandroidlibrary.Controller;
-
 
 /**
  * VideoEditor plugin for Android
@@ -162,138 +158,122 @@ public class VideoEditor extends CordovaPlugin {
         final Context appContext = cordova.getActivity().getApplicationContext();
         final PackageManager pm = appContext.getPackageManager();
 
+        ApplicationInfo ai;
+        try {
+            ai = pm.getApplicationInfo(cordova.getActivity().getPackageName(), 0);
+        } catch (final NameNotFoundException e) {
+            ai = null;
+        }
+        final String appName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
 
-        Controller.getInstance().run(new String[]{
-            "-y",
-            "-i",
-            videoSrcPath,
-            "-vcodec",
-            "copy",
-            "-an",
-            outputFileName
-    });
-    
+        final boolean saveToLibrary = options.optBoolean("saveToLibrary", true);
+        File mediaStorageDir;
 
+        if (saveToLibrary) {
+            mediaStorageDir = new File(
+                    Environment.getExternalStorageDirectory() + "/Movies",
+                    appName
+            );
+        } else {
+            mediaStorageDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + cordova.getActivity().getPackageName() + "/files/files/videos");
+        }
 
-//         ApplicationInfo ai;
-//         try {
-//             ai = pm.getApplicationInfo(cordova.getActivity().getPackageName(), 0);
-//         } catch (final NameNotFoundException e) {
-//             ai = null;
-//         }
-//         final String appName = (String) (ai != null ? pm.getApplicationLabel(ai) : "Unknown");
+        if (!mediaStorageDir.exists()) {
+            if (!mediaStorageDir.mkdirs()) {
+                callback.error("Can't access or make Movies directory");
+                return;
+            }
+        }
 
-//         final boolean saveToLibrary = options.optBoolean("saveToLibrary", true);
-//         File mediaStorageDir;
+        final String outputFilePath = new File(
+                mediaStorageDir.getPath(),
+                outputFileName + outputExtension
+        ).getAbsolutePath();
 
-//         if (saveToLibrary) {
-//             mediaStorageDir = new File(
-//                     Environment.getExternalStorageDirectory() + "/Movies",
-//                     appName
-//             );
-//         } else {
-//             mediaStorageDir = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/" + cordova.getActivity().getPackageName() + "/files/files/videos");
-//         }
+        Log.d(TAG, "outputFilePath: " + outputFilePath);
 
-//         if (!mediaStorageDir.exists()) {
-//             if (!mediaStorageDir.mkdirs()) {
-//                 callback.error("Can't access or make Movies directory");
-//                 return;
-//             }
-//         }
+        cordova.getThreadPool().execute(new Runnable() {
+            public void run() {
 
-//         final String outputFilePath = new File(
-//                 mediaStorageDir.getPath(),
-//                 outputFileName + outputExtension
-//         ).getAbsolutePath();
+                try {
 
-//         Log.d(TAG, "outputFilePath: " + outputFilePath);
+                    FileInputStream fin = new FileInputStream(inFile);
 
-//         cordova.getThreadPool().execute(new Runnable() {
-//             public void run() {
+                    MediaTranscoder.Listener listener = new MediaTranscoder.Listener() {
+                        @Override
+                        public void onTranscodeProgress(double progress) {
+                            Log.d(TAG, "transcode running " + progress);
 
-//                 try {
+                            JSONObject jsonObj = new JSONObject();
+                            try {
+                                jsonObj.put("progress", progress);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
 
-//                     FileInputStream fin = new FileInputStream(inFile);
+                            PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
+                            progressResult.setKeepCallback(true);
+                            callback.sendPluginResult(progressResult);
+                        }
 
-//                     MediaTranscoder.Listener listener = new MediaTranscoder.Listener() {
-//                         @Override
-//                         public void onTranscodeProgress(double progress) {
-//                             Log.d(TAG, "transcode running " + progress);
+                        @Override
+                        public void onTranscodeCompleted() {
 
-//                             JSONObject jsonObj = new JSONObject();
-//                             try {
-//                                 jsonObj.put("progress", progress);
-//                             } catch (JSONException e) {
-//                                 e.printStackTrace();
-//                             }
+                            File outFile = new File(outputFilePath);
+                            if (!outFile.exists()) {
+                                Log.d(TAG, "outputFile doesn't exist!");
+                                callback.error("an error ocurred during transcoding");
+                                return;
+                            }
 
-//                             PluginResult progressResult = new PluginResult(PluginResult.Status.OK, jsonObj);
-//                             progressResult.setKeepCallback(true);
-//                             callback.sendPluginResult(progressResult);
-//                         }
+                            // make the gallery display the new file if saving to library
+                            if (saveToLibrary) {
+                                Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                                scanIntent.setData(Uri.fromFile(inFile));
+                                scanIntent.setData(Uri.fromFile(outFile));
+                                appContext.sendBroadcast(scanIntent);
+                            }
 
-//                         @Override
-//                         public void onTranscodeCompleted() {
+                            if (deleteInputFile) {
+                                inFile.delete();
+                            }
 
-//                             File outFile = new File(outputFilePath);
-//                             if (!outFile.exists()) {
-//                                 Log.d(TAG, "outputFile doesn't exist!");
-//                                 callback.error("an error ocurred during transcoding");
-//                                 return;
-//                             }
+                            callback.success(outputFilePath);
+                        }
 
-//                             // make the gallery display the new file if saving to library
-//                             if (saveToLibrary) {
-//                                 Intent scanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-//                                 scanIntent.setData(Uri.fromFile(inFile));
-//                                 scanIntent.setData(Uri.fromFile(outFile));
-//                                 appContext.sendBroadcast(scanIntent);
-//                             }
+                        @Override
+                        public void onTranscodeCanceled() {
+                            callback.error("transcode canceled");
+                            Log.d(TAG, "transcode canceled");
+                        }
 
-//                             if (deleteInputFile) {
-//                                 inFile.delete();
-//                             }
+                        @Override
+                        public void onTranscodeFailed(Exception exception) {
+                            callback.error(exception.toString());
+                            Log.d(TAG, "transcode exception", exception);
+                        }
+                    };
 
-//                             callback.success(outputFilePath);
-//                         }
+                    MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                    mmr.setDataSource(videoSrcPath);
 
-//                         @Override
-//                         public void onTranscodeCanceled() {
-//                             callback.error("transcode canceled");
-//                             Log.d(TAG, "transcode canceled");
-//                         }
+                    String orientation;
+                    String mmrOrientation = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+                    Log.d(TAG, "mmrOrientation: " + mmrOrientation); // 0, 90, 180, or 270
 
-//                         @Override
-//                         public void onTranscodeFailed(Exception exception) {
-//                             callback.error(exception.toString());
-//                             Log.d(TAG, "transcode exception", exception);
-//                         }
-//                     };
+                    float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
+                    float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
 
-//                     MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-//                     mmr.setDataSource(videoSrcPath);
+                    MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
+                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height), listener, videoDuration);
 
-//                     String orientation;
-//                     String mmrOrientation = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
-//                     Log.d(TAG, "mmrOrientation: " + mmrOrientation); // 0, 90, 180, or 270
+                } catch (Throwable e) {
+                    Log.d(TAG, "transcode exception ", e);
+                    callback.error(e.toString());
+                }
 
-//                     float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
-//                     float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
-
-// //                    MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
-// //                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height), listener, videoDuration);
-
-//                     MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
-//                             MediaFormatStrategyPresets.createAndroid720pStrategy(), listener);
-
-//                 } catch (Throwable e) {
-//                     Log.d(TAG, "transcode exception ", e);
-//                     callback.error(e.toString());
-//                 }
-
-//             }
-//         });
+            }
+        });
     }
 
     /**
