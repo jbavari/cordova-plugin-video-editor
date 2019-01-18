@@ -49,6 +49,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import net.ypresto.androidtranscoder.MediaTranscoder;
+import net.ypresto.androidtranscoder.format.MediaFormatStrategyPresets;
 
 /**
  * VideoEditor plugin for Android
@@ -264,8 +265,11 @@ public class VideoEditor extends CordovaPlugin {
                     float videoWidth = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH));
                     float videoHeight = Float.parseFloat(mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT));
 
+//                    MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
+//                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height), listener, videoDuration);
+
                     MediaTranscoder.getInstance().transcodeVideo(fin.getFD(), outputFilePath,
-                            new CustomAndroidFormatStrategy(videoBitrate, fps, width, height), listener, videoDuration);
+                            MediaFormatStrategyPresets.createAndroid720pStrategy(), listener);
 
                 } catch (Throwable e) {
                     Log.d(TAG, "transcode exception ", e);
