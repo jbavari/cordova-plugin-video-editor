@@ -6,6 +6,7 @@ import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.ArrayList;
 
 import android.graphics.Bitmap;
 import org.apache.cordova.CordovaPlugin;
@@ -29,6 +30,9 @@ import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.util.Log;
+
+import com.coremedia.iso.boxes.Container;
+import com.coremedia.iso.boxes.MovieHeaderBox;
 
 import net.ypresto.androidtranscoder.MediaTranscoder;
 
@@ -65,6 +69,13 @@ public class VideoEditor extends CordovaPlugin {
         } else if (action.equals("getVideoInfo")) {
             try {
                 this.getVideoInfo(args);
+            } catch (IOException e) {
+                callback.error(e.toString());
+            }
+            return true;
+        } else if (action.equals("trim")) {
+            try {
+                this.trim(args);
             } catch (IOException e) {
                 callback.error(e.toString());
             }
@@ -461,6 +472,118 @@ public class VideoEditor extends CordovaPlugin {
         response.put("bitrate", bitrate);
 
         callback.success(response);
+    }
+
+	/**
+     * trim
+     *
+     * Performs a fast-trim operation on an input clip.
+     *
+     * ARGUMENTS
+     * =========
+     *
+     * fileUri      - path to input video
+     * trimStart      - time to start trimming
+     * trimEnd        - time to end trimming
+     * outputFileName - output file name
+     *
+     * RESPONSE
+     * ========
+     *
+     * outputFilePath - path to output file
+     *
+     * @param JSONArray args
+     * @return void
+     */
+    public void trim(JSONArray args) throws JSONException, IOException {
+        JSONObject options = args.optJSONObject(0);
+        final String inputFilePath = options.getString("fileUri").replace("file:/", "");
+        double startTime =  options.optDouble("trimStart", 0);
+        double endTime =  options.optDouble("trimEnd", 0);
+
+        final String outputFileName = options.optString(
+                "outputFileName",
+                new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ENGLISH).format(new Date())
+        );
+
+        // outputFileExt
+        final String outputFileExt = this.getFileExt(inputFilePath);
+
+        // tempDir
+        final Context appContext = cordova.getActivity().getApplicationContext();
+        final File tempDir = this.getTempDir(appContext, outputFileExt);
+        // outputFilePath
+        final File outputFile = new File(tempDir, outputFileName + outputFileExt);
+        final String outputFilePath = outputFile.getAbsolutePath();
+
+        final File inputFile = new File(inputFilePath);
+
+        FileDataSourceImpl file = new FileDataSourceImpl(inputFile);
+        Movie movie = MovieCreator.build(file);
+        // remove all tracks we will create new tracks from the old
+        List<Track> tracks = movie.getTracks();
+        movie.setTracks(new LinkedList<Track>());
+        boolean timeCorrected = false;
+        // Here we try to find a track that has sync samples. Since we can only start decoding
+        // at such a sample we SHOULD make sure that the start of the new fragment is exactly
+        // such a frame
+        for (Track track : tracks) {
+            if (track.getSyncSamples() != null && track.getSyncSamples().length > 0) {
+                if (timeCorrected) {
+                    // This exception here could be a false positive in case we have multiple tracks
+                    // with sync samples at exactly the same positions. E.g. a single movie containing
+                    // multiple qualities of the same video (Microsoft Smooth Streaming file)
+                    throw new RuntimeException("The startTime has already been corrected by another track with SyncSample. Not Supported.");
+                }
+                startTime = correctTimeToSyncSample(track, startTime, false);
+                endTime = correctTimeToSyncSample(track, endTime, true);
+                timeCorrected = true;
+            }
+        }
+        for (Track track : tracks) {
+            long currentSample = 0;
+            double currentTime = 0;
+            long startSample = -1;
+            long endSample = -1;
+
+            for (int i = 0; i < track.getSampleDurations().length; i++) {
+                if (currentTime <= startTime) {
+
+                    // current sample is still before the new starttime
+                    startSample = currentSample;
+                }
+                if (currentTime <= endTime) {
+                    // current sample is after the new start time and still before the new endtime
+                    endSample = currentSample;
+                } else {
+                    // current sample is after the end of the cropped video
+                    break;
+                }
+                currentTime += (double) track.getSampleDurations()[i] / (double) track.getTrackMetaData().getTimescale();
+                currentSample++;
+            }
+            movie.addTrack(new CroppedTrack(track, startSample, endSample));
+        }
+
+        Container out = new DefaultMp4Builder().build(movie);
+        MovieHeaderBox mvhd = Path.getPath(out, "moov/mvhd");
+        mvhd.setMatrix(Matrix.ROTATE_0);
+        if (!outputFile.exists()) {
+            outputFile.createNewFile();
+        }
+        FileOutputStream fos = new FileOutputStream(outputFilePath);
+        WritableByteChannel fc = fos.getChannel();
+        try {
+            out.writeContainer(fc);
+        } finally {
+            fc.close();
+            fos.close();
+            file.close();
+            callback.success(outputFilePath);
+        }
+
+        file.close();
+
     }
 
 
