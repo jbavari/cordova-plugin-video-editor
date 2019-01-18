@@ -5,7 +5,7 @@ repositories{
 }
 
 dependencies {
-    compile 'net.ypresto.androidtranscoder:android-transcoder:0.2.0'
+    compile 'net.ypresto.androidtranscoder:android-transcoder:0.3.0'
     compile 'com.googlecode.mp4parser:isoparser:1.1.21'
 }
 
