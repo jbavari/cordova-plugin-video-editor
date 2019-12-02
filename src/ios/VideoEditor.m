@@ -150,7 +150,7 @@
         AVVideoCompressionPropertiesKey: @
         {
             AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitrate],
-            AVVideoProfileLevelKey: AVVideoProfileLevelH264High41
+            AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel
         }
     };
     encoder.audioSettings = @
