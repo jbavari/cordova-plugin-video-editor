@@ -175,7 +175,7 @@
 
     __block BOOL videoCompleted = NO;
     __block BOOL audioCompleted = NO;
-    __weak typeof(self) wself = self;
+    __weak SDAVAssetExportSession *wself = self;
     self.inputQueue = dispatch_queue_create("VideoEncoderInputQueue", DISPATCH_QUEUE_SERIAL);
     if (videoTracks.count > 0) {
         [self.videoInput requestMediaDataWhenReadyOnQueue:self.inputQueue usingBlock:^
