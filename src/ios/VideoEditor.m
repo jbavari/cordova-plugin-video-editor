@@ -150,7 +150,7 @@
         AVVideoCompressionPropertiesKey: @
         {
             AVVideoAverageBitRateKey: [NSNumber numberWithInt: videoBitrate],
-            AVVideoProfileLevelKey: AVVideoProfileLevelH264High40
+            AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel
         }
     };
     encoder.audioSettings = @
@@ -338,31 +338,37 @@
     AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
 
     NSArray *tracks = [avAsset tracksWithMediaType:AVMediaTypeVideo];
-    AVAssetTrack *track = [tracks objectAtIndex:0];
-    CGSize mediaSize = track.naturalSize;
-
-    float videoWidth = mediaSize.width;
-    float videoHeight = mediaSize.height;
-    float aspectRatio = videoWidth / videoHeight;
-
-    // for some portrait videos ios gives the wrong width and height, this fixes that
-    NSString *videoOrientation = [self getOrientationForTrack:avAsset];
-    if ([videoOrientation isEqual: @"portrait"]) {
-        if (videoWidth > videoHeight) {
-            videoWidth = mediaSize.height;
-            videoHeight = mediaSize.width;
-            aspectRatio = videoWidth / videoHeight;
-        }
-    }
-
+    
+    // check if there are tracks, if not return
     NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
-    [dict setObject:[NSNumber numberWithFloat:videoWidth] forKey:@"width"];
-    [dict setObject:[NSNumber numberWithFloat:videoHeight] forKey:@"height"];
-    [dict setValue:videoOrientation forKey:@"orientation"];
-    [dict setValue:[NSNumber numberWithFloat:track.timeRange.duration.value / 600.0] forKey:@"duration"];
-    [dict setObject:[NSNumber numberWithLongLong:size] forKey:@"size"];
-    [dict setObject:[NSNumber numberWithFloat:track.estimatedDataRate] forKey:@"bitrate"];
+    
+    unsigned long arrSize = [tracks count];
+    if (arrSize > 0) {
+      AVAssetTrack *track = [tracks objectAtIndex:0];
+      CGSize mediaSize = track.naturalSize;
 
+      float videoWidth = mediaSize.width;
+      float videoHeight = mediaSize.height;
+      float aspectRatio = videoWidth / videoHeight;
+
+      // for some portrait videos ios gives the wrong width and height, this fixes that
+      NSString *videoOrientation = [self getOrientationForTrack:avAsset];
+      if ([videoOrientation isEqual: @"portrait"]) {
+          if (videoWidth > videoHeight) {
+              videoWidth = mediaSize.height;
+              videoHeight = mediaSize.width;
+              aspectRatio = videoWidth / videoHeight;
+          }
+      }
+
+      [dict setObject:[NSNumber numberWithFloat:videoWidth] forKey:@"width"];
+      [dict setObject:[NSNumber numberWithFloat:videoHeight] forKey:@"height"];
+      [dict setValue:videoOrientation forKey:@"orientation"];
+      [dict setValue:[NSNumber numberWithFloat:track.timeRange.duration.value / 600.0] forKey:@"duration"];
+      [dict setObject:[NSNumber numberWithLongLong:size] forKey:@"size"];
+      [dict setObject:[NSNumber numberWithFloat:track.estimatedDataRate] forKey:@"bitrate"];
+    }
+    
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:command.callbackId];
 }
 
