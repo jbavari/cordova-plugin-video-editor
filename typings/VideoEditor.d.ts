@@ -30,32 +30,30 @@ declare interface VideoEditorTranscodeProperties {
         fileUri: string,
         /** A string that indicates what type of field this is, home for example. */
         outputFileName: string,
-        /** The quality of the result. */
-        quality: VideoEditorOptions.Quality,
         /** Instructions on how to encode the video. */
         outputFileType: VideoEditorOptions.OutputFileType,
-        /** Should the video be processed with quailty or speed in mind */
+        /** Should the video be processed with quailty or speed in mind. iOS only. */
         optimizeForNetworkUse: VideoEditorOptions.OptimizeForNetworkUse,
-        /** Not supported in windows, the duration in seconds from the start of the video*/
-        duration?: number,
         /** Not supported in windows, save into the device library*/
         saveToLibrary?: boolean,
-        /** Not supported in windows, delete the orginal video*/
-        deleteInputFile?: boolean,
         /** iOS only. Defaults to true */
         maintainAspectRatio?: boolean,
         /** Width of the result */
         width?: number,
         /** Height of the result */
         height?: number,
-        /** Bitrate in bits. Defaults to 1 megabit (1000000). */
+        /** Bitrate in bits. Defaults to 9 megabit (9000000). */
         videoBitrate?: number,
-        /** Frames per second of the result. Android only. Defaults to 24. */
+        /** Frames per second of the result. Android only. Defaults to 30. */
         fps?: number,
-        /** Number of audio channels. iOS only. Defaults to 2. */
+        /** Number of audio channels. iOS, Android. Defaults: iOS - 2, Android - as is */
         audioChannels?: number,
-        /** Sample rate for the audio. iOS only. Defaults to 4410. */
+        /** Sample rate for the audio, defaults to 44100. iOS only. */
+        audioSampleRate?: number,
+        /** Audio bitrate for the video in bits,  defaults: iOS - 128000 (128 kilobits), Android - as is or 128000 */
         audioBitrate?: number,
+        /** Skip any transcoding actions (conversion/resizing/etc..) if the input video is avc video, defaults to false. Android only. */
+        skipVideoTranscodingIfAVC?: boolean,
         /** Not supported in windows, progress on the transcode*/
         progress?: (info: any) => void
 }
@@ -111,7 +109,11 @@ declare interface VideoEditorVideoInfoDetails {
         /** Size of the video in bytes. */
         size: number,
         /** Bitrate of the video in bits per second. */
-        bitrate: number
+        bitrate: number,
+        /** Media type of the video, android example: 'video/3gpp', ios example: 'avc1'. */
+        videoMediaType: string,
+        /** Media type of the audio track in video, android example: 'audio/mp4a-latm', ios example: 'aac'. */
+        audioMediaType: string
 }
 
 /**

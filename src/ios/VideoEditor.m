@@ -25,7 +25,6 @@
  *
  * fileUri              - path to input video
  * outputFileName       - output file name
- * quality              - transcode quality
  * outputFileType       - output file type
  * saveToLibrary        - save to gallery
  * maintainAspectRatio  - make the output aspect ratio match the input video
@@ -311,12 +310,14 @@
  * RESPONSE
  * ========
  *
- * width         - width of the video
- * height        - height of the video
- * orientation   - orientation of the video
- * duration      - duration of the video (in seconds)
- * size          - size of the video (in bytes)
- * bitrate       - bitrate of the video (in bits per second)
+ * width              - width of the video
+ * height             - height of the video
+ * orientation        - orientation of the video
+ * duration           - duration of the video (in seconds)
+ * size               - size of the video (in bytes)
+ * bitrate            - bitrate of the video (in bits per second)
+ * videoMediaType     - Media type of the video
+ * audioMediaType     - Media type of the audio track in video
  *
  * @param CDVInvokedUrlCommand command
  * @return void
@@ -337,10 +338,24 @@
 
     AVURLAsset *avAsset = [AVURLAsset URLAssetWithURL:fileURL options:nil];
 
-    NSArray *tracks = [avAsset tracksWithMediaType:AVMediaTypeVideo];
-    AVAssetTrack *track = [tracks objectAtIndex:0];
-    CGSize mediaSize = track.naturalSize;
+    NSArray *videoTracks = [avAsset tracksWithMediaType:AVMediaTypeVideo];
+    NSArray *audioTracks = [avAsset tracksWithMediaType:AVMediaTypeAudio];
+    AVAssetTrack *videoTrack = [videoTracks objectAtIndex:0];
+    AVAssetTrack *audioTrack = nil;
+    if (audioTracks.count > 0) {
+        audioTrack = [audioTracks objectAtIndex:0];
+    }
 
+    NSString *videoMediaType = nil;
+    NSString *audioMediaType = nil;
+    if (videoTrack.formatDescriptions.count > 0) {
+        videoMediaType = getMediaTypeFromDescription(videoTrack.formatDescriptions[0]);
+    }
+    if (audioTrack != nil && audioTrack.formatDescriptions.count > 0) {
+        audioMediaType = getMediaTypeFromDescription(audioTrack.formatDescriptions[0]);
+    }
+
+    CGSize mediaSize = videoTrack.naturalSize;
     float videoWidth = mediaSize.width;
     float videoHeight = mediaSize.height;
     float aspectRatio = videoWidth / videoHeight;
@@ -359,9 +374,11 @@
     [dict setObject:[NSNumber numberWithFloat:videoWidth] forKey:@"width"];
     [dict setObject:[NSNumber numberWithFloat:videoHeight] forKey:@"height"];
     [dict setValue:videoOrientation forKey:@"orientation"];
-    [dict setValue:[NSNumber numberWithFloat:track.timeRange.duration.value / 600.0] forKey:@"duration"];
+    [dict setValue:[NSNumber numberWithFloat:videoTrack.timeRange.duration.value / 600.0] forKey:@"duration"];
     [dict setObject:[NSNumber numberWithLongLong:size] forKey:@"size"];
-    [dict setObject:[NSNumber numberWithFloat:track.estimatedDataRate] forKey:@"bitrate"];
+    [dict setObject:[NSNumber numberWithFloat:videoTrack.estimatedDataRate] forKey:@"bitrate"];
+    [dict setValue:videoMediaType forKey:@"videoMediaType"];
+    [dict setValue:audioMediaType forKey:@"audioMediaType"];
 
     [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict] callbackId:command.callbackId];
 }
@@ -566,6 +583,19 @@
     }
 
     return [NSURL fileURLWithPath:[filePath stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+}
+
+static NSString* getMediaTypeFromDescription(id description) {
+    CMFormatDescriptionRef desc = (__bridge CMFormatDescriptionRef)description;
+    FourCharCode code = CMFormatDescriptionGetMediaSubType(desc);
+
+    NSString *result = [NSString stringWithFormat:@"%c%c%c%c",
+                        (code >> 24) & 0xff,
+                        (code >> 16) & 0xff,
+                        (code >> 8) & 0xff,
+                        code & 0xff];
+    NSCharacterSet *characterSet = [NSCharacterSet whitespaceCharacterSet];
+    return [result stringByTrimmingCharactersInSet:characterSet];
 }
 
 static dispatch_time_t getDispatchTimeFromSeconds(float seconds) {

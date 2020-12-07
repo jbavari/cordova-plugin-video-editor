@@ -24,7 +24,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jbavari/cordova-plugin-video-editor.git"
+    "url": "git+https://github.com/lars-apostle/cordova-plugin-video-editor.git",
   },
   "contributors": [
     {
@@ -36,6 +36,10 @@
       "name": "Ross Martin",
       "web": "https://twitter.com/MountainDoofus",
       "email": "rmartin311@gmail.com"
+    },
+    {
+      "name": "Lars Hunze",
+      "email": "lars.hunze@apostle.nl"
     }
   ],
   "keywords": [],

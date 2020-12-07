@@ -30,6 +30,7 @@
         <!-- add plugin class -->
         <source-file src="src/android/VideoEditor.java" target-dir="src/org/apache/cordova/videoeditor" />
         <source-file src="src/android/CustomAndroidFormatStrategy.java" target-dir="src/org/apache/cordova/videoeditor" />
+        <source-file src="src/android/FileUtils.java" target-dir="src/org/apache/cordova/videoeditor" />
 
         <framework src="src/android/build.gradle" custom="true" type="gradleReference" />
 
