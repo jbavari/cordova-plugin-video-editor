@@ -355,7 +355,7 @@
         }
     }
 
-    int duration = CMTimeGetSeconds(avAsset.duration);
+    float duration = CMTimeGetSeconds(avAsset.duration);
 
     NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
     [dict setObject:[NSNumber numberWithFloat:videoWidth] forKey:@"width"];
