@@ -5,7 +5,7 @@ repositories{
 }
 
 dependencies {
-    compile 'com.github.ergovia-mobile:android-transcoder:v0.1.10R_ergovia'
+    implementation 'com.github.ergovia-mobile:android-transcoder:v0.1.10R_ergovia'
 }
 
 android {
